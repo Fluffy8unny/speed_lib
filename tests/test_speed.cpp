@@ -1,6 +1,8 @@
 #include "../include/speed_lib.hpp"
 #include <gtest/gtest.h>
 
+using namespace speed_lib;
+
 TEST(SpeedConversion, MpsToKmh)
 {
     Speed<SPEED_REPRESENTATION::MS, double> s{10.0};
@@ -89,6 +91,14 @@ TEST(ArithmeticTests, MixedUnitsMultipleOperations)
     auto s3 = 2.0_ms;
     auto result = (s1 + s2) * s3;
     EXPECT_DOUBLE_EQ(result.value, 40.0);
+}
+
+TEST(ArithmeticTests, IntegerAddition)
+{
+    auto s1 = Speed<SPEED_REPRESENTATION::MS, int>{10};
+    auto s2 = Speed<SPEED_REPRESENTATION::MS, int>{36};
+    auto result = s1 + s2;
+    EXPECT_EQ(result.value, 20);
 }
 
 TEST(FormatterTests, DefaultFormat)
