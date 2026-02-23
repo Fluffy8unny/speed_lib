@@ -226,6 +226,26 @@ TEST(FormatterTests, KmhFormat)
     std::string formatted = std::format("{:kmh}", s);
     EXPECT_EQ(formatted, "36 km/h");
 }
+TEST(FormatterTests, Width)
+{
+    auto s = 36.0_kmh;
+    std::string formatted = std::format("{:kmh5}", s);
+    EXPECT_EQ(formatted, "   36 km/h");
+}
+
+TEST(FormatterTests, Precision)
+{
+    auto s = 36.0_kmh;
+    std::string formatted = std::format("{:kmh.5f}", s);
+    EXPECT_EQ(formatted, "36.00000 km/h");
+}
+
+TEST(FormatterTests, PrecisionAndWidth)
+{
+    auto s = 36.0_kmh;
+    std::string formatted = std::format("{:kmh10.2f}", s);
+    EXPECT_EQ(formatted, "     36.00 km/h");
+}
 
 TEST(LiteralCastTests, MpsToKmh)
 {

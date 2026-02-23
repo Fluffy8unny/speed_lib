@@ -184,13 +184,91 @@ namespace speed_lib
         const auto rhs_converted = rhs.template convert<A>();
         return Speed<A, T>{op(lhs.value, rhs_converted.value)};
     }
+
+    struct ParsedView
+    {
+        const char *unit;
+        std::optional<unsigned> width;
+        std::optional<unsigned> precision;
+    };
+    constexpr bool is_digit(char c) { return c >= '0' && c <= '9'; }
+
+    constexpr std::optional<unsigned> parse_unsigned_at(std::string_view s, std::size_t &i)
+    {
+        if (i >= s.size() || !is_digit(s[i]))
+            return std::nullopt;
+
+        unsigned v = 0;
+        while (i < s.size() && is_digit(s[i]))
+        {
+            v = v * 10u + static_cast<unsigned>(s[i] - '0');
+            ++i;
+        }
+        return v;
+    }
+
+    // Grammar: (ms|kmh|mph)([0-9]+)?(\.[0-9]+f)? why is there no constexpr regex in C++23 FML
+    constexpr std::optional<ParsedView> parse_speed(std::string_view s)
+    {
+        std::size_t cursor = 0;
+
+        auto take = [&](char c) constexpr -> bool
+        {
+            return cursor < s.size() && s[cursor] == c ? (++cursor, true) : false;
+        };
+
+        ParsedView out{};
+        out.width = std::nullopt;
+        out.precision = std::nullopt;
+
+        // unit
+        if (s.substr(cursor).starts_with(SpeedLiteralMap<SPEED_REPRESENTATION::MS>::suffix))
+        {
+            out.unit = SpeedLiteralMap<SPEED_REPRESENTATION::MS>::format_specifier;
+            cursor += 2;
+        }
+        else if (s.substr(cursor).starts_with(SpeedLiteralMap<SPEED_REPRESENTATION::KMH>::suffix))
+        {
+            out.unit = SpeedLiteralMap<SPEED_REPRESENTATION::KMH>::format_specifier;
+            cursor += 3;
+        }
+        else if (s.substr(cursor).starts_with(SpeedLiteralMap<SPEED_REPRESENTATION::MPH>::suffix))
+        {
+            out.unit = SpeedLiteralMap<SPEED_REPRESENTATION::MPH>::format_specifier;
+            cursor += 3;
+        }
+        else
+        {
+            return std::nullopt;
+        }
+
+        // optional width digits
+        if (auto w = parse_unsigned_at(s, cursor))
+            out.width = *w;
+
+        // optional precision: '.' digits+ 'f'
+        if (take('.'))
+        {
+            auto p = parse_unsigned_at(s, cursor);
+            if (!p)
+                return std::nullopt;
+            if (!take('f'))
+                return std::nullopt;
+            out.precision = *p;
+        }
+
+        if (cursor != s.size())
+            return std::nullopt;
+        return out;
+    }
+
 }
 
 // this needs to be inside of the std namespace to be picked up by std::format
 template <speed_lib::SPEED_REPRESENTATION r, speed_lib::Number T>
 struct std::formatter<speed_lib::Speed<r, T>> : std::formatter<T, char>
 {
-    const char *format_specifier;
+    speed_lib::ParsedView parsed_format;
     constexpr auto parse(std::format_parse_context &ctx)
     {
         auto it = ctx.begin();
@@ -198,7 +276,7 @@ struct std::formatter<speed_lib::Speed<r, T>> : std::formatter<T, char>
 
         if (it == end || *it == '}')
         {
-            format_specifier = speed_lib::SpeedLiteralMap<speed_lib::SPEED_REPRESENTATION::MS>::format_specifier;
+            parsed_format = speed_lib::ParsedView{speed_lib::SpeedLiteralMap<speed_lib::SPEED_REPRESENTATION::MS>::format_specifier, {}, {}};
             return it;
         }
 
@@ -207,14 +285,11 @@ struct std::formatter<speed_lib::Speed<r, T>> : std::formatter<T, char>
             ++it;
 
         std::string_view spec{&*start, static_cast<size_t>(it - start)};
-        if (spec == speed_lib::SpeedLiteralMap<speed_lib::SPEED_REPRESENTATION::MS>::suffix)
-            format_specifier = speed_lib::SpeedLiteralMap<speed_lib::SPEED_REPRESENTATION::MS>::format_specifier;
-        else if (spec == speed_lib::SpeedLiteralMap<speed_lib::SPEED_REPRESENTATION::KMH>::suffix)
-            format_specifier = speed_lib::SpeedLiteralMap<speed_lib::SPEED_REPRESENTATION::KMH>::format_specifier;
-        else if (spec == speed_lib::SpeedLiteralMap<speed_lib::SPEED_REPRESENTATION::MPH>::suffix)
-            format_specifier = speed_lib::SpeedLiteralMap<speed_lib::SPEED_REPRESENTATION::MPH>::format_specifier;
+        if (auto parsed = speed_lib::parse_speed(spec); parsed.has_value())
+
+            parsed_format = *parsed;
         else
-            throw std::format_error("invalid format specifier for Speed. Use 'ms', 'kmh', or 'mph'.");
+            throw std::format_error("invalid format specifier for Speed. Use 'ms', 'kmh', or 'mph', optionally followed by a number with an 'f' suffix (e.g., 'kmh1.5f').");
 
         return it;
     }
@@ -222,6 +297,22 @@ struct std::formatter<speed_lib::Speed<r, T>> : std::formatter<T, char>
     template <typename FormatContext>
     auto format(const speed_lib::Speed<r, T> &s, FormatContext &ctx) const
     {
-        return std::format_to(ctx.out(), "{} {}", s.value, format_specifier);
+        if (parsed_format.width && parsed_format.precision)
+        {
+            std::format_to(ctx.out(), "{:>{}.{}f}", s.value, *parsed_format.width, *parsed_format.precision);
+        }
+        else if (parsed_format.width)
+        {
+            std::format_to(ctx.out(), "{:>{}}", s.value, *parsed_format.width);
+        }
+        else if (parsed_format.precision)
+        {
+            std::format_to(ctx.out(), "{:.{}f}", s.value, *parsed_format.precision);
+        }
+        else
+        {
+            std::format_to(ctx.out(), "{}", s.value);
+        }
+        return std::format_to(ctx.out(), " {}", parsed_format.unit);
     }
 };
