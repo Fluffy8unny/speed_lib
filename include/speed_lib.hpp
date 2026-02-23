@@ -92,8 +92,6 @@ namespace speed_lib
         }
     };
 
-
-
     constexpr Speed<SPEED_REPRESENTATION::MS, LiteralBase> operator""_ms(LiteralBase value)
     {
         return Speed<SPEED_REPRESENTATION::MS, LiteralBase>{value};
@@ -136,12 +134,14 @@ namespace speed_lib
     }
 
     template <typename Op, SPEED_REPRESENTATION A, Number T>
+    requires std::is_invocable_r_v<T, Op, T, T>
     constexpr Speed<A, T> apply_binary_op(const Speed<A, T> &lhs, const Speed<A, T> &rhs, Op op)
     {
         return Speed<A, T>{op(lhs.value, rhs.value)};
     }
 
     template <typename Op, SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
+    requires std::is_invocable_r_v<T, Op, T, T>
     constexpr Speed<A, T> apply_binary_op(const Speed<A, T> &lhs, const Speed<B, T> &rhs, Op op)
     {
         const auto rhs_converted = rhs.template convert<A>();
