@@ -11,6 +11,8 @@ enum class SPEED_REPRESENTATION : char
 
 template <typename T>
 concept Number = std::is_arithmetic_v<T>;
+constexpr SPEED_REPRESENTATION DefaultSpeedRepresentation = SPEED_REPRESENTATION::MS;
+using LiteralBase = long double;
 
 template <SPEED_REPRESENTATION, SPEED_REPRESENTATION, Number>
 struct SpeedConversionMap;
@@ -26,7 +28,6 @@ struct SpeedConversionMap<SPEED_REPRESENTATION::KMH, SPEED_REPRESENTATION::MS, T
 {
     static constexpr T value{1.0 / 3.6};
 };
-
 
 template <SPEED_REPRESENTATION U, typename T>
     requires Number<T>
@@ -44,29 +45,22 @@ struct Speed
     {
         return convert<OUT>();
     }
+
+    template <typename V>
+        requires std::is_convertible_v<V, T>
+    constexpr operator Speed<U, V>() const
+    {
+        return Speed<U, V>{static_cast<V>(value)};
+    }
+
+    template <SPEED_REPRESENTATION OUT, typename V>
+        requires std::is_convertible_v<V, T>
+    constexpr operator Speed<OUT, V>() const
+    {
+        auto converted = convert<OUT>();
+        return static_cast<Speed<OUT, V>>(converted);
+    }
 };
-
-
-template<SPEED_REPRESENTATION A>
-struct SpeedLiteralMap;
-
-template<>
-struct SpeedLiteralMap<SPEED_REPRESENTATION::MS>
-{
-    static constexpr const char* suffix = "ms";
-    static constexpr const char* format_specifier = "m/s";
-};
-
-template<>
-struct SpeedLiteralMap<SPEED_REPRESENTATION::KMH>
-{
-    static constexpr const char* suffix = "kmh";
-    static constexpr const char* format_specifier = "km/h";
-};
-
-constexpr SPEED_REPRESENTATION DefaultSpeedRepresentation = SPEED_REPRESENTATION::MS;
-using LiteralBase = long double;
-using SpeedMPS = Speed<SPEED_REPRESENTATION::MS, LiteralBase>;
 
 template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
 constexpr Speed<A, T> operator+(const Speed<A, T> &a, const Speed<B, T> &b)
@@ -74,13 +68,11 @@ constexpr Speed<A, T> operator+(const Speed<A, T> &a, const Speed<B, T> &b)
     return apply_binary_op(a, b, std::plus<T>{});
 }
 
-
 template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
 constexpr Speed<A, T> operator-(const Speed<A, T> &a, const Speed<B, T> &b)
 {
     return apply_binary_op(a, b, std::minus<T>{});
 }
-
 
 template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
 constexpr Speed<A, T> operator*(const Speed<A, T> &a, const Speed<B, T> &b)
@@ -104,7 +96,6 @@ template <typename Op, SPEED_REPRESENTATION A, Number T>
 constexpr Speed<A, T> apply_binary_op(const Speed<A, T> &lhs, const Speed<A, T> &rhs, Op op)
 {
     return Speed<A, T>{op(lhs.value, rhs.value)};
-
 }
 
 template <typename Op, SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
@@ -114,10 +105,37 @@ constexpr Speed<A, T> apply_binary_op(const Speed<A, T> &lhs, const Speed<B, T> 
     return Speed<A, T>{op(lhs.value, rhs_converted.value)};
 }
 
+template <SPEED_REPRESENTATION A>
+struct SpeedLiteralMap;
+
+template <>
+struct SpeedLiteralMap<SPEED_REPRESENTATION::MS>
+{
+    static constexpr const char *suffix = "ms";
+    static constexpr const char *format_specifier = "m/s";
+};
+
+template <>
+struct SpeedLiteralMap<SPEED_REPRESENTATION::KMH>
+{
+    static constexpr const char *suffix = "kmh";
+    static constexpr const char *format_specifier = "km/h";
+};
+
+constexpr Speed<SPEED_REPRESENTATION::MS, LiteralBase> operator""_ms(LiteralBase value)
+{
+    return Speed<SPEED_REPRESENTATION::MS, LiteralBase>{value};
+}
+
+constexpr Speed<SPEED_REPRESENTATION::KMH, LiteralBase> operator""_kmh(LiteralBase value)
+{
+    return Speed<SPEED_REPRESENTATION::KMH, LiteralBase>{value};
+}
+
 template <SPEED_REPRESENTATION r, Number T>
 struct std::formatter<Speed<r, T>> : std::formatter<T, char>
 {
-    const char* format_specifier;
+    const char *format_specifier;
     constexpr auto parse(std::format_parse_context &ctx)
     {
         auto it = ctx.begin();
@@ -147,17 +165,6 @@ struct std::formatter<Speed<r, T>> : std::formatter<T, char>
     template <typename FormatContext>
     auto format(const Speed<r, T> &s, FormatContext &ctx) const
     {
-        std::string_view fmt = std::format("{} {}", s.value, format_specifier);
-        return std::format_to(ctx.out(), "{}", fmt);
+        return std::format_to(ctx.out(), "{} {}", s.value, format_specifier);
     }
 };
-
-constexpr Speed<SPEED_REPRESENTATION::MS, LiteralBase> operator""_ms(LiteralBase value)
-{
-    return Speed<SPEED_REPRESENTATION::MS, LiteralBase>{value};
-}
-
-constexpr Speed<SPEED_REPRESENTATION::KMH, LiteralBase> operator""_kmh(LiteralBase value)
-{
-    return Speed<SPEED_REPRESENTATION::KMH, LiteralBase>{value};
-}
