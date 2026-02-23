@@ -125,6 +125,46 @@ TEST(ArithmeticTests, IntegerDivision)
     EXPECT_EQ(result.value, 5);
 }
 
+TEST(ArithmeticTests, IntegerNegation)
+{
+    auto s = Speed<SPEED_REPRESENTATION::MS, int>{10};
+    auto result = -s;
+    EXPECT_EQ(result.value, -10);
+}
+
+
+TEST(ArithmeticTests, UnsignedIntegerAddition)
+{
+    auto s1 = Speed<SPEED_REPRESENTATION::MS, unsigned int>{10};
+    auto s2 = Speed<SPEED_REPRESENTATION::MS, unsigned int>{10};
+    auto result = s1 + s2;
+    EXPECT_EQ(result.value, 20);
+}
+
+TEST(ArithmeticTests, UnsignedIntegerSubtraction)
+{
+    auto s1 = Speed<SPEED_REPRESENTATION::MS, unsigned int>{10};
+    auto s2 = Speed<SPEED_REPRESENTATION::MS, unsigned int>{10};
+    auto result = s1 - s2;
+    EXPECT_EQ(result.value, 0);
+}
+
+TEST(ArithmeticTests, UnsignedIntegerMultiplication)
+{
+    auto s1 = Speed<SPEED_REPRESENTATION::MS, unsigned int>{10};
+    auto s2 = Speed<SPEED_REPRESENTATION::MS, unsigned int>{2};
+    auto result = s1 * s2;
+    EXPECT_EQ(result.value, 20);
+}
+
+TEST(ArithmeticTests, UnsignedIntegerDivision)
+{
+    auto s1 = Speed<SPEED_REPRESENTATION::MS, unsigned int>{10};
+    auto s2 = Speed<SPEED_REPRESENTATION::MS, unsigned int>{2};
+    auto result = s1 / s2;
+    EXPECT_EQ(result.value, 5);
+}
+
 TEST(FormatterTests, DefaultFormat)
 {
     auto s = 10.0_ms;

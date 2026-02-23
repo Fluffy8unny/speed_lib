@@ -93,6 +93,7 @@ namespace speed_lib
     }
 
     template <SPEED_REPRESENTATION A, Number T>
+    requires std::is_signed_v<T>
     constexpr Speed<A, T> operator-(const Speed<A, T> &s)
     {
         return Speed<A, T>{-s.value};
