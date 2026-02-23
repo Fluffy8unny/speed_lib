@@ -46,6 +46,62 @@ TEST(SpeedConversion, MphToKmh)
     EXPECT_NEAR(kmh.value, 36.0, 1e-4);
 }
 
+TEST(SpeedConversion, KntToMs)
+{
+    Speed<SPEED_REPRESENTATION::KNT, double> s{10.0};
+    auto ms = static_cast<Speed<SPEED_REPRESENTATION::MS, double>>(s);
+    EXPECT_NEAR(ms.value, 19.4384, 1e-4);
+}
+
+TEST(SpeedConversion, KntToKmh)
+{
+    Speed<SPEED_REPRESENTATION::KNT, double> s{10.0};
+    auto kmh = static_cast<Speed<SPEED_REPRESENTATION::KMH, double>>(s);
+    EXPECT_NEAR(kmh.value, 18.52, 1e-4);
+}
+
+TEST(SpeedConversion, KntToMph)
+{
+    Speed<SPEED_REPRESENTATION::KNT, double> s{10.0};
+    auto mph = static_cast<Speed<SPEED_REPRESENTATION::MPH, double>>(s);
+    EXPECT_NEAR(mph.value, 11.5078, 1e-4);
+}
+
+TEST(SpeedConversion, KntToC)
+{
+    Speed<SPEED_REPRESENTATION::KNT, double> s{5.831e8};
+    auto c = static_cast<Speed<SPEED_REPRESENTATION::C, double>>(s);
+    EXPECT_NEAR(c.value, 1.0, 1e-6);
+}
+
+TEST(SpeedConversion, CToMs)
+{
+    Speed<SPEED_REPRESENTATION::C, double> s{1.0};
+    auto ms = static_cast<Speed<SPEED_REPRESENTATION::MS, double>>(s);
+    EXPECT_NEAR(ms.value, 2.998e8, 1e-4);
+}
+
+TEST(SpeedConversion, CToKmh)
+{
+    Speed<SPEED_REPRESENTATION::C, double> s{1.0};
+    auto kmh = static_cast<Speed<SPEED_REPRESENTATION::KMH, double>>(s);
+    EXPECT_NEAR(kmh.value, 1.079e9, 1e-4);
+}
+
+TEST(SpeedConversion, CToMph)
+{
+    Speed<SPEED_REPRESENTATION::C, double> s{1.0};
+    auto mph = static_cast<Speed<SPEED_REPRESENTATION::MPH, double>>(s);
+    EXPECT_NEAR(mph.value, 6.706e8, 1e-4);
+}
+
+TEST(SpeedConversion, CToKnt)
+{
+    Speed<SPEED_REPRESENTATION::C, double> s{1.0};
+    auto knt = static_cast<Speed<SPEED_REPRESENTATION::KNT, double>>(s);
+    EXPECT_NEAR(knt.value, 5.831e8, 1e-4);
+}
+
 TEST(SpeedConversion, RoundTrip)
 {
     Speed<SPEED_REPRESENTATION::MS, double> s{12.345};
@@ -64,6 +120,18 @@ TEST(LiteralTests, KmhLiteral)
 {
     auto s = 36.0_kmh;
     EXPECT_DOUBLE_EQ(s.value, 36.0);
+}
+
+TEST(LiteralTests, KntLiteral)
+{
+    auto s = 20.0_knt;
+    EXPECT_DOUBLE_EQ(s.value, 20.0);
+}
+
+TEST(LiteralTests, CLiteral)
+{
+    auto s = 1.0_c;
+    EXPECT_DOUBLE_EQ(s.value, 1.0);
 }
 
 TEST(ArithmeticTests, Addition)
@@ -226,6 +294,21 @@ TEST(FormatterTests, KmhFormat)
     std::string formatted = std::format("{:kmh}", s);
     EXPECT_EQ(formatted, "36 km/h");
 }
+
+TEST(FormatterTests, KntFormat)
+{
+    auto s = 20.0_knt;
+    std::string formatted = std::format("{:knt}", s);
+    EXPECT_EQ(formatted, "20 knt");
+}
+
+TEST(FormatterTests, CFormat)
+{
+    auto s = 1.0_c;
+    std::string formatted = std::format("{:c}", s);
+    EXPECT_EQ(formatted, "1 c");
+}
+
 TEST(FormatterTests, Width)
 {
     auto s = 36.0_kmh;
@@ -273,4 +356,18 @@ TEST(LiteralCastTests, KmhToKmh)
     auto s = 36.0_kmh;
     auto kmh = static_cast<Speed<SPEED_REPRESENTATION::KMH, double>>(s);
     EXPECT_DOUBLE_EQ(kmh.value, 36.0);
+}
+
+TEST(LiteralCastTests, KntToMps)
+{
+    auto s = 10.0_knt;
+    auto mps = static_cast<Speed<SPEED_REPRESENTATION::MS, double>>(s);
+    EXPECT_NEAR(mps.value, 19.4384, 1e-4);
+}
+
+TEST(LiteralCastTests, CToMps)
+{
+    auto s = 1.0_c;
+    auto mps = static_cast<Speed<SPEED_REPRESENTATION::MS, double>>(s);
+    EXPECT_NEAR(mps.value, 2.998e8, 1e-4);
 }

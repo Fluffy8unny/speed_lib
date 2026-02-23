@@ -11,7 +11,9 @@ namespace speed_lib
     {
         MS,  //<= meters per second
         KMH, //<= kilometers per hour
-        MPH  //<= miles per hour
+        MPH, //<= miles per hour
+        KNT, //<= knots
+        C    //<= speed of light
     };
 
     template <typename T>
@@ -24,8 +26,28 @@ namespace speed_lib
 
     constexpr double MS_TO_KMH = 3.6;
     constexpr double MPH_TO_KMH = 1.60934;
+    constexpr double KNT_TO_KMH = 1.852;
     constexpr double MS_TO_MPH = 2.23694;
+    constexpr double KNT_TO_MPH = 1.15078;
+    constexpr double KNT_TO_MS = 1.94384;
+    constexpr double C_TO_MS = 2.998e+8;
+    constexpr double C_TO_KMH = 1.079e+9;
+    constexpr double C_TO_MPH = 6.706e+8;
+    constexpr double C_TO_KNT = 5.831e+8;
 
+#define DEFINE_CONVERSION(from, to, conversion_value)                                  \
+    template <Number T>                                                                \
+    struct SpeedConversionMap<SPEED_REPRESENTATION::from, SPEED_REPRESENTATION::to, T> \
+    {                                                                                  \
+        static constexpr T value{conversion_value};                                    \
+    };                                                                                 \
+    template <Number T>                                                                \
+    struct SpeedConversionMap<SPEED_REPRESENTATION::to, SPEED_REPRESENTATION::from, T> \
+    {                                                                                  \
+        static constexpr T value{1.0 / conversion_value};                              \
+    };
+
+    // MS conversion
     template <Number T>
     struct SpeedConversionMap<SPEED_REPRESENTATION::MS, SPEED_REPRESENTATION::KMH, T>
     {
@@ -39,6 +61,19 @@ namespace speed_lib
     };
 
     template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::MS, SPEED_REPRESENTATION::KNT, T>
+    {
+        static constexpr T value{1.0 / KNT_TO_MS};
+    };
+
+    template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::MS, SPEED_REPRESENTATION::C, T>
+    {
+        static constexpr T value{1.0 / C_TO_MS};
+    };
+
+    // KMH conversion
+    template <Number T>
     struct SpeedConversionMap<SPEED_REPRESENTATION::KMH, SPEED_REPRESENTATION::MS, T>
     {
         static constexpr T value{1.0 / MS_TO_KMH};
@@ -51,6 +86,19 @@ namespace speed_lib
     };
 
     template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::KMH, SPEED_REPRESENTATION::KNT, T>
+    {
+        static constexpr T value{1.0 / KNT_TO_KMH};
+    };
+
+    template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::KMH, SPEED_REPRESENTATION::C, T>
+    {
+        static constexpr T value{1.0 / C_TO_KMH};
+    };
+
+    // MPH conversion
+    template <Number T>
     struct SpeedConversionMap<SPEED_REPRESENTATION::MPH, SPEED_REPRESENTATION::MS, T>
     {
         static constexpr T value{1.0 / MS_TO_MPH};
@@ -60,6 +108,68 @@ namespace speed_lib
     struct SpeedConversionMap<SPEED_REPRESENTATION::MPH, SPEED_REPRESENTATION::KMH, T>
     {
         static constexpr T value{MPH_TO_KMH};
+    };
+
+    template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::MPH, SPEED_REPRESENTATION::KNT, T>
+    {
+        static constexpr T value{1.0 / KNT_TO_MPH};
+    };
+
+    template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::MPH, SPEED_REPRESENTATION::C, T>
+    {
+        static constexpr T value{1.0 / C_TO_MPH};
+    };
+
+    // Knots conversion
+    template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::KNT, SPEED_REPRESENTATION::MS, T>
+    {
+        static constexpr T value{KNT_TO_MS};
+    };
+
+    template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::KNT, SPEED_REPRESENTATION::KMH, T>
+    {
+        static constexpr T value{KNT_TO_KMH};
+    };
+
+    template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::KNT, SPEED_REPRESENTATION::MPH, T>
+    {
+        static constexpr T value{KNT_TO_MPH};
+    };
+
+    template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::KNT, SPEED_REPRESENTATION::C, T>
+    {
+        static constexpr T value{1.0 / C_TO_KNT};
+    };
+
+    // C conversion
+    template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::C, SPEED_REPRESENTATION::MS, T>
+    {
+        static constexpr T value{C_TO_MS};
+    };
+
+    template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::C, SPEED_REPRESENTATION::KMH, T>
+    {
+        static constexpr T value{C_TO_KMH};
+    };
+
+    template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::C, SPEED_REPRESENTATION::MPH, T>
+    {
+        static constexpr T value{C_TO_MPH};
+    };
+
+    template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::C, SPEED_REPRESENTATION::KNT, T>
+    {
+        static constexpr T value{C_TO_KNT};
     };
 
     template <SPEED_REPRESENTATION A>
@@ -84,6 +194,20 @@ namespace speed_lib
     {
         static constexpr const char *suffix = "mph";
         static constexpr const char *format_specifier = "mi/h";
+    };
+
+    template <>
+    struct SpeedLiteralMap<SPEED_REPRESENTATION::KNT>
+    {
+        static constexpr const char *suffix = "knt";
+        static constexpr const char *format_specifier = "knt";
+    };
+
+    template <>
+    struct SpeedLiteralMap<SPEED_REPRESENTATION::C>
+    {
+        static constexpr const char *suffix = "c";
+        static constexpr const char *format_specifier = "c";
     };
 
     // Value is tagged with its representation to allow for implicit conversions and operator overloads that handle different representations.
@@ -143,6 +267,16 @@ namespace speed_lib
     constexpr Speed<SPEED_REPRESENTATION::MPH, LiteralBase> operator""_mph(LiteralBase value)
     {
         return Speed<SPEED_REPRESENTATION::MPH, LiteralBase>{value};
+    }
+
+    constexpr Speed<SPEED_REPRESENTATION::KNT, LiteralBase> operator""_knt(LiteralBase value)
+    {
+        return Speed<SPEED_REPRESENTATION::KNT, LiteralBase>{value};
+    }
+
+    constexpr Speed<SPEED_REPRESENTATION::C, LiteralBase> operator""_c(LiteralBase value)
+    {
+        return Speed<SPEED_REPRESENTATION::C, LiteralBase>{value};
     }
 
     template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
@@ -213,7 +347,7 @@ namespace speed_lib
         return v;
     }
 
-    // Grammar: (ms|kmh|mph)([0-9]+)?(\.[0-9]+f)? why is there no constexpr regex in C++23 FML
+    // Grammar: (ms|kmh|mph|knt|c)([0-9]+)?(\.[0-9]+f)? why is there no constexpr regex in C++23 FML
     constexpr std::optional<ParsedView> parse_speed(std::string_view s)
     {
         std::size_t cursor = 0;
@@ -242,6 +376,16 @@ namespace speed_lib
         {
             out.unit = SpeedLiteralMap<SPEED_REPRESENTATION::MPH>::format_specifier;
             cursor += std::strlen(SpeedLiteralMap<SPEED_REPRESENTATION::MPH>::suffix);
+        }
+        else if (s.substr(cursor).starts_with(SpeedLiteralMap<SPEED_REPRESENTATION::KNT>::suffix))
+        {
+            out.unit = SpeedLiteralMap<SPEED_REPRESENTATION::KNT>::format_specifier;
+            cursor += std::strlen(SpeedLiteralMap<SPEED_REPRESENTATION::KNT>::suffix);
+        }
+        else if (s.substr(cursor).starts_with(SpeedLiteralMap<SPEED_REPRESENTATION::C>::suffix))
+        {
+            out.unit = SpeedLiteralMap<SPEED_REPRESENTATION::C>::format_specifier;
+            cursor += std::strlen(SpeedLiteralMap<SPEED_REPRESENTATION::C>::suffix);
         }
         else
         {
@@ -294,7 +438,7 @@ struct std::formatter<speed_lib::Speed<r, T>> : std::formatter<T, char>
 
             parsed_format = *parsed;
         else
-            throw std::format_error("invalid format specifier for Speed. Use 'ms', 'kmh', or 'mph', optionally followed by a number with an 'f' suffix (e.g., 'kmh1.5f').");
+            throw std::format_error("invalid format specifier for Speed. Use 'ms', 'kmh', 'knt', 'c', or 'mph', optionally followed by a number with an 'f' suffix (e.g., 'kmh1.5f').");
 
         return it;
     }
