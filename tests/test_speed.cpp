@@ -96,7 +96,7 @@ TEST(ArithmeticTests, MixedUnitsMultipleOperations)
 TEST(ArithmeticTests, IntegerAddition)
 {
     auto s1 = Speed<SPEED_REPRESENTATION::MS, int>{10};
-    auto s2 = Speed<SPEED_REPRESENTATION::MS, int>{36};
+    auto s2 = Speed<SPEED_REPRESENTATION::MS, int>{10};
     auto result = s1 + s2;
     EXPECT_EQ(result.value, 20);
 }
@@ -104,7 +104,7 @@ TEST(ArithmeticTests, IntegerAddition)
 TEST(ArithmeticTests, IntegerSubtraction)
 {
     auto s1 = Speed<SPEED_REPRESENTATION::MS, int>{10};
-    auto s2 = Speed<SPEED_REPRESENTATION::MS, int>{36};
+    auto s2 = Speed<SPEED_REPRESENTATION::MS, int>{10};
     auto result = s1 - s2;
     EXPECT_EQ(result.value, 0);
 }
