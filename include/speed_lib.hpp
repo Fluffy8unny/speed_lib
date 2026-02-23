@@ -3,6 +3,7 @@
 #include <format>
 #include <functional>
 #include <iostream>
+#include <cstring>
 
 namespace speed_lib
 {
@@ -139,6 +140,11 @@ namespace speed_lib
         return Speed<SPEED_REPRESENTATION::KMH, LiteralBase>{value};
     }
 
+    constexpr Speed<SPEED_REPRESENTATION::MPH, LiteralBase> operator""_mph(LiteralBase value)
+    {
+        return Speed<SPEED_REPRESENTATION::MPH, LiteralBase>{value};
+    }
+
     template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
     constexpr Speed<A, T> operator+(const Speed<A, T> &a, const Speed<B, T> &b)
     {
@@ -225,17 +231,17 @@ namespace speed_lib
         if (s.substr(cursor).starts_with(SpeedLiteralMap<SPEED_REPRESENTATION::MS>::suffix))
         {
             out.unit = SpeedLiteralMap<SPEED_REPRESENTATION::MS>::format_specifier;
-            cursor += 2;
+            cursor += std::strlen(SpeedLiteralMap<SPEED_REPRESENTATION::MS>::suffix);
         }
         else if (s.substr(cursor).starts_with(SpeedLiteralMap<SPEED_REPRESENTATION::KMH>::suffix))
         {
             out.unit = SpeedLiteralMap<SPEED_REPRESENTATION::KMH>::format_specifier;
-            cursor += 3;
+            cursor += std::strlen(SpeedLiteralMap<SPEED_REPRESENTATION::KMH>::suffix);
         }
         else if (s.substr(cursor).starts_with(SpeedLiteralMap<SPEED_REPRESENTATION::MPH>::suffix))
         {
             out.unit = SpeedLiteralMap<SPEED_REPRESENTATION::MPH>::format_specifier;
-            cursor += 3;
+            cursor += std::strlen(SpeedLiteralMap<SPEED_REPRESENTATION::MPH>::suffix);
         }
         else
         {
@@ -261,7 +267,6 @@ namespace speed_lib
             return std::nullopt;
         return out;
     }
-
 }
 
 // this needs to be inside of the std namespace to be picked up by std::format
