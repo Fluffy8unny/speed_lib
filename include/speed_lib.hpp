@@ -8,9 +8,9 @@ namespace speed_lib
 {
     enum class SPEED_REPRESENTATION : char
     {
-        MS, //<= meters per second
+        MS,  //<= meters per second
         KMH, //<= kilometers per hour
-        MPH //<= miles per hour 
+        MPH  //<= miles per hour
     };
 
     template <typename T>
@@ -21,9 +21,9 @@ namespace speed_lib
     template <SPEED_REPRESENTATION, SPEED_REPRESENTATION, Number>
     struct SpeedConversionMap;
 
-    constexpr double MS_TO_KMH  = 3.6;
+    constexpr double MS_TO_KMH = 3.6;
     constexpr double MPH_TO_KMH = 1.60934;
-    constexpr double MS_TO_MPH  = 2.23694;
+    constexpr double MS_TO_MPH = 2.23694;
 
     template <Number T>
     struct SpeedConversionMap<SPEED_REPRESENTATION::MS, SPEED_REPRESENTATION::KMH, T>
@@ -46,20 +46,20 @@ namespace speed_lib
     template <Number T>
     struct SpeedConversionMap<SPEED_REPRESENTATION::KMH, SPEED_REPRESENTATION::MPH, T>
     {
-        static constexpr T value{ 1.0 / MPH_TO_KMH};
+        static constexpr T value{1.0 / MPH_TO_KMH};
     };
 
     template <Number T>
     struct SpeedConversionMap<SPEED_REPRESENTATION::MPH, SPEED_REPRESENTATION::MS, T>
     {
         static constexpr T value{1.0 / MS_TO_MPH};
-    };  
+    };
 
     template <Number T>
     struct SpeedConversionMap<SPEED_REPRESENTATION::MPH, SPEED_REPRESENTATION::KMH, T>
     {
         static constexpr T value{MPH_TO_KMH};
-    };  
+    };
 
     template <SPEED_REPRESENTATION A>
     struct SpeedLiteralMap;
@@ -85,14 +85,14 @@ namespace speed_lib
         static constexpr const char *format_specifier = "mi/h";
     };
 
-    //Value is tagged with its representation to allow for implicit conversions and operator overloads that handle different representations.
+    // Value is tagged with its representation to allow for implicit conversions and operator overloads that handle different representations.
     template <SPEED_REPRESENTATION U, typename T>
         requires Number<T>
     struct Speed
     {
         T value;
-     
-        //Convert speed to another representation
+
+        // Convert speed to another representation
         template <SPEED_REPRESENTATION OUT>
         constexpr Speed<OUT, T> convert() const
         {
@@ -105,7 +105,7 @@ namespace speed_lib
             return convert<OUT>();
         }
 
-        //Convert enclosed value to another type
+        // Convert enclosed value to another type
         template <typename V>
             requires std::is_convertible_v<V, T>
         constexpr operator Speed<U, V>() const
@@ -113,7 +113,7 @@ namespace speed_lib
             return Speed<U, V>{static_cast<V>(value)};
         }
 
-        //Convert both representation and value type
+        // Convert both representation and value type
         template <SPEED_REPRESENTATION OUT, typename V>
             requires std::is_convertible_v<V, T>
         constexpr operator Speed<OUT, V>() const
@@ -122,7 +122,7 @@ namespace speed_lib
             return static_cast<Speed<OUT, V>>(converted_speed);
         }
 
-        //std::cout and so on
+        // std::cout and so on
         friend std::ostream &operator<<(std::ostream &os, const Speed &s)
         {
             return os << std::format("{}", s);
@@ -164,21 +164,21 @@ namespace speed_lib
     }
 
     template <SPEED_REPRESENTATION A, Number T>
-    requires std::is_signed_v<T>
+        requires std::is_signed_v<T>
     constexpr Speed<A, T> operator-(const Speed<A, T> &s)
     {
         return Speed<A, T>{-s.value};
     }
 
     template <typename Op, SPEED_REPRESENTATION A, Number T>
-    requires std::is_invocable_r_v<T, Op, T, T>
+        requires std::is_invocable_r_v<T, Op, T, T>
     constexpr Speed<A, T> apply_binary_op(const Speed<A, T> &lhs, const Speed<A, T> &rhs, Op op)
     {
         return Speed<A, T>{op(lhs.value, rhs.value)};
     }
 
     template <typename Op, SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
-    requires std::is_invocable_r_v<T, Op, T, T>
+        requires std::is_invocable_r_v<T, Op, T, T>
     constexpr Speed<A, T> apply_binary_op(const Speed<A, T> &lhs, const Speed<B, T> &rhs, Op op)
     {
         const auto rhs_converted = rhs.template convert<A>();
@@ -186,7 +186,7 @@ namespace speed_lib
     }
 }
 
-//this needs to be inside of the std namespace to be picked up by std::format 
+// this needs to be inside of the std namespace to be picked up by std::format
 template <speed_lib::SPEED_REPRESENTATION r, speed_lib::Number T>
 struct std::formatter<speed_lib::Speed<r, T>> : std::formatter<T, char>
 {

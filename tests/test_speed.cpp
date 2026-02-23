@@ -32,7 +32,6 @@ TEST(SpeedConversion, KmhToMph)
     EXPECT_NEAR(mph.value, 22.3694, 1e-4);
 }
 
-
 TEST(SpeedConversion, MphToMs)
 {
     Speed<SPEED_REPRESENTATION::MPH, double> s{22.3694};
@@ -54,7 +53,6 @@ TEST(SpeedConversion, RoundTrip)
     auto back = static_cast<Speed<SPEED_REPRESENTATION::MS, double>>(kmh);
     EXPECT_NEAR(back.value, s.value, 1e-12);
 }
-
 
 TEST(LiteralTests, MpsLiteral)
 {
@@ -162,7 +160,6 @@ TEST(ArithmeticTests, IntegerNegation)
     auto result = -s;
     EXPECT_EQ(result.value, -10);
 }
-
 
 TEST(ArithmeticTests, UnsignedIntegerAddition)
 {
