@@ -101,6 +101,30 @@ TEST(ArithmeticTests, IntegerAddition)
     EXPECT_EQ(result.value, 20);
 }
 
+TEST(ArithmeticTests, IntegerSubtraction)
+{
+    auto s1 = Speed<SPEED_REPRESENTATION::MS, int>{10};
+    auto s2 = Speed<SPEED_REPRESENTATION::MS, int>{36};
+    auto result = s1 - s2;
+    EXPECT_EQ(result.value, 0);
+}
+
+TEST(ArithmeticTests, IntegerMultiplication)
+{
+    auto s1 = Speed<SPEED_REPRESENTATION::MS, int>{10};
+    auto s2 = Speed<SPEED_REPRESENTATION::MS, int>{2};
+    auto result = s1 * s2;
+    EXPECT_EQ(result.value, 20);
+}
+
+TEST(ArithmeticTests, IntegerDivision)
+{
+    auto s1 = Speed<SPEED_REPRESENTATION::MS, int>{10};
+    auto s2 = Speed<SPEED_REPRESENTATION::MS, int>{2};
+    auto result = s1 / s2;
+    EXPECT_EQ(result.value, 5);
+}
+
 TEST(FormatterTests, DefaultFormat)
 {
     auto s = 10.0_ms;
