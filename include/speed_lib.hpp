@@ -27,6 +27,7 @@ struct SpeedConversionMap<SPEED_REPRESENTATION::KMH, SPEED_REPRESENTATION::MS, T
     static constexpr T value{1.0 / 3.6};
 };
 
+
 template <SPEED_REPRESENTATION U, typename T>
     requires Number<T>
 struct Speed
@@ -44,6 +45,7 @@ struct Speed
         return convert<OUT>();
     }
 };
+
 
 template<SPEED_REPRESENTATION A>
 struct SpeedLiteralMap;
@@ -66,23 +68,12 @@ constexpr SPEED_REPRESENTATION DefaultSpeedRepresentation = SPEED_REPRESENTATION
 using LiteralBase = long double;
 using SpeedMPS = Speed<SPEED_REPRESENTATION::MS, LiteralBase>;
 
-template <SPEED_REPRESENTATION A,  Number T>
-constexpr Speed<A, T> operator+(const Speed<A, T> &a, const Speed<A, T> &b)
-{
-    return Speed<A, T>{a.value + b.value};
-}
-
 template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
 constexpr Speed<A, T> operator+(const Speed<A, T> &a, const Speed<B, T> &b)
 {
     return apply_binary_op(a, b, std::plus<T>{});
 }
 
-template <SPEED_REPRESENTATION A,  Number T>
-constexpr Speed<A, T> operator-(const Speed<A, T> &a, const Speed<A, T> &b)
-{
-    return Speed<A, T>{a.value - b.value};
-}
 
 template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
 constexpr Speed<A, T> operator-(const Speed<A, T> &a, const Speed<B, T> &b)
@@ -90,22 +81,11 @@ constexpr Speed<A, T> operator-(const Speed<A, T> &a, const Speed<B, T> &b)
     return apply_binary_op(a, b, std::minus<T>{});
 }
 
-template <SPEED_REPRESENTATION A,  Number T>
-constexpr Speed<A, T> operator*(const Speed<A, T> &a, const Speed<A, T> &b)
-{   
-    return Speed<A, T>{a.value * b.value};
-}   
 
 template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
 constexpr Speed<A, T> operator*(const Speed<A, T> &a, const Speed<B, T> &b)
 {
     return apply_binary_op(a, b, std::multiplies<T>{});
-}
-
-template <SPEED_REPRESENTATION A,  Number T>
-constexpr Speed<A, T> operator/(const Speed<A, T> &a, const Speed<A, T> &b)
-{
-    return Speed<A, T>{a.value / b.value};
 }
 
 template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
@@ -120,10 +100,17 @@ constexpr Speed<A, T> operator-(const Speed<A, T> &s)
     return Speed<A, T>{-s.value};
 }
 
+template <typename Op, SPEED_REPRESENTATION A, Number T>
+constexpr Speed<A, T> apply_binary_op(const Speed<A, T> &lhs, const Speed<A, T> &rhs, Op op)
+{
+    return Speed<A, T>{op(lhs.value, rhs.value)};
+
+}
+
 template <typename Op, SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
 constexpr Speed<A, T> apply_binary_op(const Speed<A, T> &lhs, const Speed<B, T> &rhs, Op op)
 {
-    auto rhs_converted = rhs.template convert<A>();
+    const auto rhs_converted = rhs.template convert<A>();
     return Speed<A, T>{op(lhs.value, rhs_converted.value)};
 }
 
