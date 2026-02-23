@@ -9,7 +9,8 @@ namespace speed_lib
     enum class SPEED_REPRESENTATION : char
     {
         MS, //<= meters per second
-        KMH //<= kilometers per hour
+        KMH, //<= kilometers per hour
+        MPH //<= miles per hour 
     };
 
     template <typename T>
@@ -20,17 +21,45 @@ namespace speed_lib
     template <SPEED_REPRESENTATION, SPEED_REPRESENTATION, Number>
     struct SpeedConversionMap;
 
+    constexpr double MS_TO_KMH  = 3.6;
+    constexpr double MPH_TO_KMH = 1.60934;
+    constexpr double MS_TO_MPH  = 2.23694;
+
     template <Number T>
     struct SpeedConversionMap<SPEED_REPRESENTATION::MS, SPEED_REPRESENTATION::KMH, T>
     {
-        static constexpr T value{3.6};
+        static constexpr T value{MS_TO_KMH};
+    };
+
+    template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::MS, SPEED_REPRESENTATION::MPH, T>
+    {
+        static constexpr T value{MS_TO_MPH};
     };
 
     template <Number T>
     struct SpeedConversionMap<SPEED_REPRESENTATION::KMH, SPEED_REPRESENTATION::MS, T>
     {
-        static constexpr T value{1.0 / 3.6};
+        static constexpr T value{1.0 / MS_TO_KMH};
     };
+
+    template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::KMH, SPEED_REPRESENTATION::MPH, T>
+    {
+        static constexpr T value{ 1.0 / MPH_TO_KMH};
+    };
+
+    template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::MPH, SPEED_REPRESENTATION::MS, T>
+    {
+        static constexpr T value{1.0 / MS_TO_MPH};
+    };  
+
+    template <Number T>
+    struct SpeedConversionMap<SPEED_REPRESENTATION::MPH, SPEED_REPRESENTATION::KMH, T>
+    {
+        static constexpr T value{MPH_TO_KMH};
+    };  
 
     template <SPEED_REPRESENTATION A>
     struct SpeedLiteralMap;
@@ -47,6 +76,13 @@ namespace speed_lib
     {
         static constexpr const char *suffix = "kmh";
         static constexpr const char *format_specifier = "km/h";
+    };
+
+    template <>
+    struct SpeedLiteralMap<SPEED_REPRESENTATION::MPH>
+    {
+        static constexpr const char *suffix = "mph";
+        static constexpr const char *format_specifier = "mi/h";
     };
 
     //Value is tagged with its representation to allow for implicit conversions and operator overloads that handle different representations.
@@ -175,8 +211,10 @@ struct std::formatter<speed_lib::Speed<r, T>> : std::formatter<T, char>
             format_specifier = speed_lib::SpeedLiteralMap<speed_lib::SPEED_REPRESENTATION::MS>::format_specifier;
         else if (spec == speed_lib::SpeedLiteralMap<speed_lib::SPEED_REPRESENTATION::KMH>::suffix)
             format_specifier = speed_lib::SpeedLiteralMap<speed_lib::SPEED_REPRESENTATION::KMH>::format_specifier;
+        else if (spec == speed_lib::SpeedLiteralMap<speed_lib::SPEED_REPRESENTATION::MPH>::suffix)
+            format_specifier = speed_lib::SpeedLiteralMap<speed_lib::SPEED_REPRESENTATION::MPH>::format_specifier;
         else
-            throw std::format_error("invalid format specifier for Speed. Use 'ms' or 'kmh'.");
+            throw std::format_error("invalid format specifier for Speed. Use 'ms', 'kmh', or 'mph'.");
 
         return it;
     }

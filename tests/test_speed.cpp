@@ -4,18 +4,47 @@
 
 using namespace speed_lib;
 
-TEST(SpeedConversion, MpsToKmh)
+TEST(SpeedConversion, MsToKmh)
 {
     Speed<SPEED_REPRESENTATION::MS, double> s{10.0};
     auto kmh = static_cast<Speed<SPEED_REPRESENTATION::KMH, double>>(s);
     EXPECT_DOUBLE_EQ(kmh.value, 36.0);
 }
 
-TEST(SpeedConversion, KmhToMps)
+TEST(SpeedConversion, MsToMph)
+{
+    Speed<SPEED_REPRESENTATION::MS, double> s{10.0};
+    auto mph = static_cast<Speed<SPEED_REPRESENTATION::MPH, double>>(s);
+    EXPECT_NEAR(mph.value, 22.3694, 1e-4);
+}
+
+TEST(SpeedConversion, KmhToMs)
 {
     Speed<SPEED_REPRESENTATION::KMH, double> s{36.0};
-    auto mps = static_cast<Speed<SPEED_REPRESENTATION::MS, double>>(s);
-    EXPECT_DOUBLE_EQ(mps.value, 10.0);
+    auto ms = static_cast<Speed<SPEED_REPRESENTATION::MS, double>>(s);
+    EXPECT_DOUBLE_EQ(ms.value, 10.0);
+}
+
+TEST(SpeedConversion, KmhToMph)
+{
+    Speed<SPEED_REPRESENTATION::KMH, double> s{36.0};
+    auto mph = static_cast<Speed<SPEED_REPRESENTATION::MPH, double>>(s);
+    EXPECT_NEAR(mph.value, 22.3694, 1e-4);
+}
+
+
+TEST(SpeedConversion, MphToMs)
+{
+    Speed<SPEED_REPRESENTATION::MPH, double> s{22.3694};
+    auto ms = static_cast<Speed<SPEED_REPRESENTATION::MS, double>>(s);
+    EXPECT_NEAR(ms.value, 10.0, 1e-4);
+}
+
+TEST(SpeedConversion, MphToKmh)
+{
+    Speed<SPEED_REPRESENTATION::MPH, double> s{22.3694};
+    auto kmh = static_cast<Speed<SPEED_REPRESENTATION::KMH, double>>(s);
+    EXPECT_NEAR(kmh.value, 36.0, 1e-4);
 }
 
 TEST(SpeedConversion, RoundTrip)
@@ -25,6 +54,7 @@ TEST(SpeedConversion, RoundTrip)
     auto back = static_cast<Speed<SPEED_REPRESENTATION::MS, double>>(kmh);
     EXPECT_NEAR(back.value, s.value, 1e-12);
 }
+
 
 TEST(LiteralTests, MpsLiteral)
 {
