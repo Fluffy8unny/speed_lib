@@ -49,6 +49,7 @@ namespace speed_lib
         static constexpr const char *format_specifier = "km/h";
     };
 
+    //Value is tagged with its representation to allow for implicit conversions and operator overloads that handle different representations.
     template <SPEED_REPRESENTATION U, typename T>
         requires Number<T>
     struct Speed
@@ -149,6 +150,7 @@ namespace speed_lib
     }
 }
 
+//this needs to be inside of the std namespace to be picked up by std::format 
 template <speed_lib::SPEED_REPRESENTATION r, speed_lib::Number T>
 struct std::formatter<speed_lib::Speed<r, T>> : std::formatter<T, char>
 {
