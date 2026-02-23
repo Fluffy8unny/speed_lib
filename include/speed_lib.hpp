@@ -2,6 +2,7 @@
 #include <type_traits>
 #include <format>
 #include <functional>
+#include <iostream>
 
 namespace speed_lib
 {
@@ -29,6 +30,23 @@ namespace speed_lib
     struct SpeedConversionMap<SPEED_REPRESENTATION::KMH, SPEED_REPRESENTATION::MS, T>
     {
         static constexpr T value{1.0 / 3.6};
+    };
+
+    template <SPEED_REPRESENTATION A>
+    struct SpeedLiteralMap;
+
+    template <>
+    struct SpeedLiteralMap<SPEED_REPRESENTATION::MS>
+    {
+        static constexpr const char *suffix = "ms";
+        static constexpr const char *format_specifier = "m/s";
+    };
+
+    template <>
+    struct SpeedLiteralMap<SPEED_REPRESENTATION::KMH>
+    {
+        static constexpr const char *suffix = "kmh";
+        static constexpr const char *format_specifier = "km/h";
     };
 
     template <SPEED_REPRESENTATION U, typename T>
@@ -66,7 +84,25 @@ namespace speed_lib
             const auto converted_speed = convert<OUT>();
             return static_cast<Speed<OUT, V>>(converted_speed);
         }
+
+        //std::cout and so on
+        friend std::ostream &operator<<(std::ostream &os, const Speed &s)
+        {
+            return os << std::format("{}", s);
+        }
     };
+
+
+
+    constexpr Speed<SPEED_REPRESENTATION::MS, LiteralBase> operator""_ms(LiteralBase value)
+    {
+        return Speed<SPEED_REPRESENTATION::MS, LiteralBase>{value};
+    }
+
+    constexpr Speed<SPEED_REPRESENTATION::KMH, LiteralBase> operator""_kmh(LiteralBase value)
+    {
+        return Speed<SPEED_REPRESENTATION::KMH, LiteralBase>{value};
+    }
 
     template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
     constexpr Speed<A, T> operator+(const Speed<A, T> &a, const Speed<B, T> &b)
@@ -110,33 +146,6 @@ namespace speed_lib
     {
         const auto rhs_converted = rhs.template convert<A>();
         return Speed<A, T>{op(lhs.value, rhs_converted.value)};
-    }
-
-    template <SPEED_REPRESENTATION A>
-    struct SpeedLiteralMap;
-
-    template <>
-    struct SpeedLiteralMap<SPEED_REPRESENTATION::MS>
-    {
-        static constexpr const char *suffix = "ms";
-        static constexpr const char *format_specifier = "m/s";
-    };
-
-    template <>
-    struct SpeedLiteralMap<SPEED_REPRESENTATION::KMH>
-    {
-        static constexpr const char *suffix = "kmh";
-        static constexpr const char *format_specifier = "km/h";
-    };
-
-    constexpr Speed<SPEED_REPRESENTATION::MS, LiteralBase> operator""_ms(LiteralBase value)
-    {
-        return Speed<SPEED_REPRESENTATION::MS, LiteralBase>{value};
-    }
-
-    constexpr Speed<SPEED_REPRESENTATION::KMH, LiteralBase> operator""_kmh(LiteralBase value)
-    {
-        return Speed<SPEED_REPRESENTATION::KMH, LiteralBase>{value};
     }
 }
 
