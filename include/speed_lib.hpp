@@ -181,8 +181,8 @@ namespace speed_lib
     struct ParsedView
     {
         const char *unit;
-        std::optional<unsigned> width;
-        std::optional<unsigned> precision;
+        std::optional<unsigned> width = std::nullopt;
+        std::optional<unsigned> precision = std::nullopt;
     };
 
     constexpr bool is_digit(char c) { return c >= '0' and c <= '9'; }
@@ -226,8 +226,6 @@ namespace speed_lib
         };
 
         ParsedView result{};
-        result.width = std::nullopt;
-        result.precision = std::nullopt;
 
         // unit
         if (!(try_parse_unit<SPEED_REPRESENTATION::MS>(s, cursor, result) or
