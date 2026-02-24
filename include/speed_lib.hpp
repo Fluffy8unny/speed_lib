@@ -9,11 +9,11 @@ namespace speed_lib
 {
     enum class SPEED_REPRESENTATION : char
     {
-        MS,  //<= meters per second
-        KMH, //<= kilometers per hour
-        MPH, //<= miles per hour
-        KNT, //<= knots
-        C    //<= speed of light
+        MS,  ///< meters per second
+        KMH, ///< kilometers per hour
+        MPH, ///< miles per hour
+        KNT, ///< knots
+        C    ///< speed of light
     };
 
 #define SPEED_REPRESENTATION_TEMPLATE_LIST \
@@ -89,6 +89,7 @@ namespace speed_lib
             return convert<OUT>();
         }
 
+        // get the raw value without converting units
         constexpr operator T() const
         {
             return value;
@@ -248,19 +249,19 @@ namespace speed_lib
         if (!try_parse_any_unit<SPEED_REPRESENTATION_TEMPLATE_LIST>(s, cursor, result))
             return std::nullopt;
 
-        // optional width digits
+        // optional width
         if (auto w = parse_unsigned_at(s, cursor))
             result.width = *w;
 
         // optional precision: '.' digits+ 'f'
         if (consumeCharacter('.'))
         {
-            auto p = parse_unsigned_at(s, cursor);
-            if (!p)
+            if (auto p = parse_unsigned_at(s, cursor); p)
+                result.precision = *p;
+            else
                 return std::nullopt;
             if (!consumeCharacter('f'))
                 return std::nullopt;
-            result.precision = *p;
         }
 
         if (cursor != s.size())
@@ -281,13 +282,13 @@ struct std::formatter<speed_lib::Speed<r, T>> : std::formatter<T, char>
 
         if (it == end or *it == '}')
         {
+            // use default
             parsed_format = speed_lib::ParsedView{speed_lib::SpeedLiteralMap<speed_lib::DefaultSpeedRepresentation>::format_specifier, {}, {}};
             return it;
         }
 
         auto start = it;
-        while (it != end and *it != '}')
-            ++it;
+        it = std::find(it, end, '}');
 
         std::string_view spec{&*start, static_cast<size_t>(it - start)};
         if (auto parsed = speed_lib::parse_speed(spec); parsed.has_value())
