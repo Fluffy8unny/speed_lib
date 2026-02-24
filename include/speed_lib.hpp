@@ -17,47 +17,32 @@ namespace speed_lib
     };
 
     template <typename T>
-    concept Number = std::is_arithmetic_v<T>;
+    concept NumericalType = std::is_arithmetic_v<T>;
     constexpr SPEED_REPRESENTATION DefaultSpeedRepresentation = SPEED_REPRESENTATION::MS;
     using LiteralBase = long double;
 
-    template <SPEED_REPRESENTATION, SPEED_REPRESENTATION, Number>
-    struct SpeedConversionMap;
+    template <SPEED_REPRESENTATION>
+    struct UnitScaleToMs;
 
-    constexpr double MS_TO_KMH = 3.6;
-    constexpr double MPH_TO_KMH = 1.60934;
-    constexpr double KNT_TO_KMH = 1.852;
-    constexpr double MS_TO_MPH = 2.23694;
-    constexpr double KNT_TO_MPH = 1.15078;
-    constexpr double KNT_TO_MS = 1.94384;
-    constexpr double C_TO_MS = 2.998e+8;
-    constexpr double C_TO_KMH = 1.079e+9;
-    constexpr double C_TO_MPH = 6.706e+8;
-    constexpr double C_TO_KNT = 5.831e+8;
-
-#define DEFINE_CONVERSION(from, to, conversion_value)                                  \
-    template <Number T>                                                                \
-    struct SpeedConversionMap<SPEED_REPRESENTATION::from, SPEED_REPRESENTATION::to, T> \
-    {                                                                                  \
-        static constexpr T value{conversion_value};                                    \
-    };                                                                                 \
-    template <Number T>                                                                \
-    struct SpeedConversionMap<SPEED_REPRESENTATION::to, SPEED_REPRESENTATION::from, T> \
-    {                                                                                  \
-        static constexpr T value{1.0 / conversion_value};                              \
+#define DEFINE_UNIT_SCALE_TO_MS(unit, scale)         \
+    template <>                                      \
+    struct UnitScaleToMs<SPEED_REPRESENTATION::unit> \
+    {                                                \
+        static constexpr long double value{scale};   \
     };
 
-    DEFINE_CONVERSION(MS, KMH, MS_TO_KMH)
-    DEFINE_CONVERSION(MS, MPH, MS_TO_MPH)
-    DEFINE_CONVERSION(MPH, KMH, MPH_TO_KMH)
-    DEFINE_CONVERSION(KNT, MS, KNT_TO_MS)
-    DEFINE_CONVERSION(KNT, KMH, KNT_TO_KMH)
-    DEFINE_CONVERSION(KNT, MPH, KNT_TO_MPH)
-    DEFINE_CONVERSION(C, MS, C_TO_MS)
-    DEFINE_CONVERSION(C, KMH, C_TO_KMH)
-    DEFINE_CONVERSION(C, MPH, C_TO_MPH)
-    DEFINE_CONVERSION(C, KNT, C_TO_KNT)
-#undef DEFINE_CONVERSION
+    DEFINE_UNIT_SCALE_TO_MS(MS, 1.0L)
+    DEFINE_UNIT_SCALE_TO_MS(KMH, 1000.0L / 3600.0L)
+    DEFINE_UNIT_SCALE_TO_MS(MPH, 1609.344L / 3600.0L)
+    DEFINE_UNIT_SCALE_TO_MS(KNT, 1852.0L / 3600.0L)
+    DEFINE_UNIT_SCALE_TO_MS(C, 299792458.0L)
+#undef DEFINE_UNIT_SCALE_TO_MS
+
+    template <SPEED_REPRESENTATION FROM, SPEED_REPRESENTATION TO, NumericalType T>
+    struct SpeedConversionMap
+    {
+        static constexpr T value{static_cast<T>(UnitScaleToMs<FROM>::value / UnitScaleToMs<TO>::value)};
+    };
 
     template <SPEED_REPRESENTATION A>
     struct SpeedLiteralMap;
@@ -79,7 +64,7 @@ namespace speed_lib
 
     // Value is tagged with its representation to allow for implicit conversions and operator overloads that handle different representations.
     template <SPEED_REPRESENTATION U, typename T>
-        requires Number<T>
+        requires NumericalType<T>
     struct Speed
     {
         T value;
@@ -120,6 +105,7 @@ namespace speed_lib
             return os << std::format("{}", s);
         }
     };
+
 #define DEFINE_LITERAL_OPERATOR(unit, suffix)                                                       \
     constexpr Speed<SPEED_REPRESENTATION::unit, LiteralBase> operator""_##suffix(LiteralBase value) \
     {                                                                                               \
@@ -133,45 +119,45 @@ namespace speed_lib
     DEFINE_LITERAL_OPERATOR(C, c)
 #undef DEFINE_LITERAL_OPERATOR
 
-    template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
+    template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, NumericalType T>
     constexpr Speed<A, T> operator+(const Speed<A, T> &a, const Speed<B, T> &b)
     {
         return apply_binary_op(a, b, std::plus<T>{});
     }
 
-    template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
+    template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, NumericalType T>
     constexpr Speed<A, T> operator-(const Speed<A, T> &a, const Speed<B, T> &b)
     {
         return apply_binary_op(a, b, std::minus<T>{});
     }
 
-    template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
+    template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, NumericalType T>
     constexpr Speed<A, T> operator*(const Speed<A, T> &a, const Speed<B, T> &b)
     {
         return apply_binary_op(a, b, std::multiplies<T>{});
     }
 
-    template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
+    template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, NumericalType T>
     constexpr Speed<A, T> operator/(const Speed<A, T> &a, const Speed<B, T> &b)
     {
         return apply_binary_op(a, b, std::divides<T>{});
     }
 
-    template <SPEED_REPRESENTATION A, Number T>
+    template <SPEED_REPRESENTATION A, NumericalType T>
         requires std::is_signed_v<T>
     constexpr Speed<A, T> operator-(const Speed<A, T> &s)
     {
         return Speed<A, T>{-s.value};
     }
 
-    template <typename Op, SPEED_REPRESENTATION A, Number T>
+    template <typename Op, SPEED_REPRESENTATION A, NumericalType T>
         requires std::is_invocable_r_v<T, Op, T, T>
     constexpr Speed<A, T> apply_binary_op(const Speed<A, T> &lhs, const Speed<A, T> &rhs, Op op)
     {
         return Speed<A, T>{op(lhs.value, rhs.value)};
     }
 
-    template <typename Op, SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
+    template <typename Op, SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, NumericalType T>
         requires std::is_invocable_r_v<T, Op, T, T>
     constexpr Speed<A, T> apply_binary_op(const Speed<A, T> &lhs, const Speed<B, T> &rhs, Op op)
     {
@@ -185,7 +171,8 @@ namespace speed_lib
         std::optional<unsigned> width;
         std::optional<unsigned> precision;
     };
-    constexpr bool is_digit(char c) { return c >= '0' && c <= '9'; }
+
+    constexpr bool is_digit(char c) { return c >= '0' and c <= '9'; }
 
     constexpr std::optional<unsigned> parse_unsigned_at(std::string_view s, std::size_t &cursor)
     {
@@ -203,6 +190,18 @@ namespace speed_lib
         return v;
     }
 
+    template <SPEED_REPRESENTATION R>
+    constexpr bool try_parse_unit(std::string_view s, std::size_t &cursor, ParsedView &out)
+    {
+        const auto suffix = SpeedLiteralMap<R>::suffix;
+        if (!s.substr(cursor).starts_with(suffix))
+            return false;
+
+        out.unit = SpeedLiteralMap<R>::format_specifier;
+        cursor += std::strlen(suffix);
+        return true;
+    }
+
     // Grammar: (ms|kmh|mph|knt|c)([0-9]+)?(\.[0-9]+f)? why is there no constexpr regex in C++23 FML
     constexpr std::optional<ParsedView> parse_speed(std::string_view s)
     {
@@ -213,44 +212,23 @@ namespace speed_lib
             return cursor < s.size() and s[cursor] == c ? (++cursor, true) : false;
         };
 
-        ParsedView out{};
-        out.width = std::nullopt;
-        out.precision = std::nullopt;
+        ParsedView result{};
+        result.width = std::nullopt;
+        result.precision = std::nullopt;
 
         // unit
-        if (s.substr(cursor).starts_with(SpeedLiteralMap<SPEED_REPRESENTATION::MS>::suffix))
-        {
-            out.unit = SpeedLiteralMap<SPEED_REPRESENTATION::MS>::format_specifier;
-            cursor += std::strlen(SpeedLiteralMap<SPEED_REPRESENTATION::MS>::suffix);
-        }
-        else if (s.substr(cursor).starts_with(SpeedLiteralMap<SPEED_REPRESENTATION::KMH>::suffix))
-        {
-            out.unit = SpeedLiteralMap<SPEED_REPRESENTATION::KMH>::format_specifier;
-            cursor += std::strlen(SpeedLiteralMap<SPEED_REPRESENTATION::KMH>::suffix);
-        }
-        else if (s.substr(cursor).starts_with(SpeedLiteralMap<SPEED_REPRESENTATION::MPH>::suffix))
-        {
-            out.unit = SpeedLiteralMap<SPEED_REPRESENTATION::MPH>::format_specifier;
-            cursor += std::strlen(SpeedLiteralMap<SPEED_REPRESENTATION::MPH>::suffix);
-        }
-        else if (s.substr(cursor).starts_with(SpeedLiteralMap<SPEED_REPRESENTATION::KNT>::suffix))
-        {
-            out.unit = SpeedLiteralMap<SPEED_REPRESENTATION::KNT>::format_specifier;
-            cursor += std::strlen(SpeedLiteralMap<SPEED_REPRESENTATION::KNT>::suffix);
-        }
-        else if (s.substr(cursor).starts_with(SpeedLiteralMap<SPEED_REPRESENTATION::C>::suffix))
-        {
-            out.unit = SpeedLiteralMap<SPEED_REPRESENTATION::C>::format_specifier;
-            cursor += std::strlen(SpeedLiteralMap<SPEED_REPRESENTATION::C>::suffix);
-        }
-        else
+        if (!(try_parse_unit<SPEED_REPRESENTATION::MS>(s, cursor, result) ||
+              try_parse_unit<SPEED_REPRESENTATION::KMH>(s, cursor, result) ||
+              try_parse_unit<SPEED_REPRESENTATION::MPH>(s, cursor, result) ||
+              try_parse_unit<SPEED_REPRESENTATION::KNT>(s, cursor, result) ||
+              try_parse_unit<SPEED_REPRESENTATION::C>(s, cursor, result)))
         {
             return std::nullopt;
         }
 
         // optional width digits
         if (auto w = parse_unsigned_at(s, cursor))
-            out.width = *w;
+            result.width = *w;
 
         // optional precision: '.' digits+ 'f'
         if (take('.'))
@@ -260,17 +238,17 @@ namespace speed_lib
                 return std::nullopt;
             if (!take('f'))
                 return std::nullopt;
-            out.precision = *p;
+            result.precision = *p;
         }
 
         if (cursor != s.size())
             return std::nullopt;
-        return out;
+        return result;
     }
 }
 
 // this needs to be inside of the std namespace to be picked up by std::format
-template <speed_lib::SPEED_REPRESENTATION r, speed_lib::Number T>
+template <speed_lib::SPEED_REPRESENTATION r, speed_lib::NumericalType T>
 struct std::formatter<speed_lib::Speed<r, T>> : std::formatter<T, char>
 {
     speed_lib::ParsedView parsed_format;
@@ -291,7 +269,6 @@ struct std::formatter<speed_lib::Speed<r, T>> : std::formatter<T, char>
 
         std::string_view spec{&*start, static_cast<size_t>(it - start)};
         if (auto parsed = speed_lib::parse_speed(spec); parsed.has_value())
-
             parsed_format = *parsed;
         else
             throw std::format_error("invalid format specifier for Speed. Use 'ms', 'kmh', 'knt', 'c', or 'mph', optionally followed by a number with an 'f' suffix (e.g., 'kmh1.5f').");

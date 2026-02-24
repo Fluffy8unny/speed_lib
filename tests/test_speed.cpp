@@ -50,7 +50,7 @@ TEST(SpeedConversion, KntToMs)
 {
     Speed<SPEED_REPRESENTATION::KNT, double> s{10.0};
     auto ms = static_cast<Speed<SPEED_REPRESENTATION::MS, double>>(s);
-    EXPECT_NEAR(ms.value, 19.4384, 1e-4);
+    EXPECT_NEAR(ms.value, 5.144444444444445, 1e-12);
 }
 
 TEST(SpeedConversion, KntToKmh)
@@ -64,42 +64,42 @@ TEST(SpeedConversion, KntToMph)
 {
     Speed<SPEED_REPRESENTATION::KNT, double> s{10.0};
     auto mph = static_cast<Speed<SPEED_REPRESENTATION::MPH, double>>(s);
-    EXPECT_NEAR(mph.value, 11.5078, 1e-4);
+    EXPECT_NEAR(mph.value, 11.507794480235427, 1e-9);
 }
 
 TEST(SpeedConversion, KntToC)
 {
-    Speed<SPEED_REPRESENTATION::KNT, double> s{5.831e8};
+    Speed<SPEED_REPRESENTATION::KNT, double> s{582749918.3585314};
     auto c = static_cast<Speed<SPEED_REPRESENTATION::C, double>>(s);
-    EXPECT_NEAR(c.value, 1.0, 1e-6);
+    EXPECT_NEAR(c.value, 1.0, 1e-9);
 }
 
 TEST(SpeedConversion, CToMs)
 {
     Speed<SPEED_REPRESENTATION::C, double> s{1.0};
     auto ms = static_cast<Speed<SPEED_REPRESENTATION::MS, double>>(s);
-    EXPECT_NEAR(ms.value, 2.998e8, 1e-4);
+    EXPECT_NEAR(ms.value, 299792458.0, 1e-4);
 }
 
 TEST(SpeedConversion, CToKmh)
 {
     Speed<SPEED_REPRESENTATION::C, double> s{1.0};
     auto kmh = static_cast<Speed<SPEED_REPRESENTATION::KMH, double>>(s);
-    EXPECT_NEAR(kmh.value, 1.079e9, 1e-4);
+    EXPECT_NEAR(kmh.value, 1079252848.8, 1e-4);
 }
 
 TEST(SpeedConversion, CToMph)
 {
     Speed<SPEED_REPRESENTATION::C, double> s{1.0};
     auto mph = static_cast<Speed<SPEED_REPRESENTATION::MPH, double>>(s);
-    EXPECT_NEAR(mph.value, 6.706e8, 1e-4);
+    EXPECT_NEAR(mph.value, 670616629.3843951, 1e-4);
 }
 
 TEST(SpeedConversion, CToKnt)
 {
     Speed<SPEED_REPRESENTATION::C, double> s{1.0};
     auto knt = static_cast<Speed<SPEED_REPRESENTATION::KNT, double>>(s);
-    EXPECT_NEAR(knt.value, 5.831e8, 1e-4);
+    EXPECT_NEAR(knt.value, 582749918.3585314, 1e-4);
 }
 
 TEST(SpeedConversion, RoundTrip)
@@ -362,12 +362,12 @@ TEST(LiteralCastTests, KntToMps)
 {
     auto s = 10.0_knt;
     auto mps = static_cast<Speed<SPEED_REPRESENTATION::MS, double>>(s);
-    EXPECT_NEAR(mps.value, 19.4384, 1e-4);
+    EXPECT_NEAR(mps.value, 5.14444, 1e-4);
 }
 
 TEST(LiteralCastTests, CToMps)
 {
     auto s = 1.0_c;
     auto mps = static_cast<Speed<SPEED_REPRESENTATION::MS, double>>(s);
-    EXPECT_NEAR(mps.value, 2.998e8, 1e-4);
+    EXPECT_NEAR(mps.value, 299792458.0, 1e-4);
 }
