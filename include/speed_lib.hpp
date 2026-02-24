@@ -207,7 +207,7 @@ namespace speed_lib
     {
         std::size_t cursor = 0;
 
-        auto take = [&](char c) constexpr -> bool
+        auto consumeCharacter = [&](char c) constexpr -> bool
         {
             return cursor < s.size() and s[cursor] == c ? (++cursor, true) : false;
         };
@@ -217,10 +217,10 @@ namespace speed_lib
         result.precision = std::nullopt;
 
         // unit
-        if (!(try_parse_unit<SPEED_REPRESENTATION::MS>(s, cursor, result) ||
-              try_parse_unit<SPEED_REPRESENTATION::KMH>(s, cursor, result) ||
-              try_parse_unit<SPEED_REPRESENTATION::MPH>(s, cursor, result) ||
-              try_parse_unit<SPEED_REPRESENTATION::KNT>(s, cursor, result) ||
+        if (!(try_parse_unit<SPEED_REPRESENTATION::MS>(s, cursor, result) or
+              try_parse_unit<SPEED_REPRESENTATION::KMH>(s, cursor, result) or
+              try_parse_unit<SPEED_REPRESENTATION::MPH>(s, cursor, result) or
+              try_parse_unit<SPEED_REPRESENTATION::KNT>(s, cursor, result) or
               try_parse_unit<SPEED_REPRESENTATION::C>(s, cursor, result)))
         {
             return std::nullopt;
@@ -231,12 +231,12 @@ namespace speed_lib
             result.width = *w;
 
         // optional precision: '.' digits+ 'f'
-        if (take('.'))
+        if (consumeCharacter('.'))
         {
             auto p = parse_unsigned_at(s, cursor);
             if (!p)
                 return std::nullopt;
-            if (!take('f'))
+            if (!consumeCharacter('f'))
                 return std::nullopt;
             result.precision = *p;
         }
@@ -257,14 +257,14 @@ struct std::formatter<speed_lib::Speed<r, T>> : std::formatter<T, char>
         auto it = ctx.begin();
         auto end = ctx.end();
 
-        if (it == end || *it == '}')
+        if (it == end or *it == '}')
         {
-            parsed_format = speed_lib::ParsedView{speed_lib::SpeedLiteralMap<speed_lib::SPEED_REPRESENTATION::MS>::format_specifier, {}, {}};
+            parsed_format = speed_lib::ParsedView{speed_lib::SpeedLiteralMap<speed_lib::DefaultSpeedRepresentation>::format_specifier, {}, {}};
             return it;
         }
 
         auto start = it;
-        while (it != end && *it != '}')
+        while (it != end and *it != '}')
             ++it;
 
         std::string_view spec{&*start, static_cast<size_t>(it - start)};
@@ -279,7 +279,7 @@ struct std::formatter<speed_lib::Speed<r, T>> : std::formatter<T, char>
     template <typename FormatContext>
     auto format(const speed_lib::Speed<r, T> &s, FormatContext &ctx) const
     {
-        if (parsed_format.width && parsed_format.precision)
+        if (parsed_format.width and parsed_format.precision)
         {
             std::format_to(ctx.out(), "{:>{}.{}f}", s.value, *parsed_format.width, *parsed_format.precision);
         }
