@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(BUILD_TESTING "Build tests" ON)
+include(CTest)
 
 if(BUILD_TESTING)
   add_subdirectory(tests)
