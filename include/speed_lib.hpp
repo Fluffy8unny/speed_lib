@@ -118,36 +118,49 @@ namespace speed_lib
     DEFINE_LITERAL_OPERATOR(KNT, knt)
     DEFINE_LITERAL_OPERATOR(C, c)
 #undef DEFINE_LITERAL_OPERATOR
+    // The whole reason this library exists is to add units
+    // This is why the overloads represent proper unit-aware operations instead of just converting to a common representation and doing the operation there.
 
+    // C[unit] = A[unit] + B[unit]
     template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, NumericalType T>
     constexpr Speed<A, T> operator+(const Speed<A, T> &a, const Speed<B, T> &b)
     {
         return apply_binary_op(a, b, std::plus<T>{});
     }
 
+    // C[unit] = A[unit] - B[unit]
     template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, NumericalType T>
     constexpr Speed<A, T> operator-(const Speed<A, T> &a, const Speed<B, T> &b)
     {
         return apply_binary_op(a, b, std::minus<T>{});
     }
 
-    template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, NumericalType T>
-    constexpr Speed<A, T> operator*(const Speed<A, T> &a, const Speed<B, T> &b)
-    {
-        return apply_binary_op(a, b, std::multiplies<T>{});
-    }
-
-    template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, NumericalType T>
-    constexpr Speed<A, T> operator/(const Speed<A, T> &a, const Speed<B, T> &b)
-    {
-        return apply_binary_op(a, b, std::divides<T>{});
-    }
-
+    // A[unit] = A[unit] * scalar
     template <SPEED_REPRESENTATION A, NumericalType T>
-        requires std::is_signed_v<T>
-    constexpr Speed<A, T> operator-(const Speed<A, T> &s)
+    constexpr Speed<A, T> operator*(const Speed<A, T> &s, const T a)
     {
-        return Speed<A, T>{-s.value};
+        return Speed<A, T>{s.value * a};
+    }
+
+    // A[unit] = scalar * A[unit]
+    template <SPEED_REPRESENTATION A, NumericalType T>
+    constexpr Speed<A, T> operator*(const T a, const Speed<A, T> &s)
+    {
+        return Speed<A, T>{a * s.value};
+    }
+
+    // A[unit] = A[unit] / scalar. We have no way to invert units, so we can't do scalar / A[unit]
+    template <SPEED_REPRESENTATION A, NumericalType T>
+    constexpr Speed<A, T> operator/(const Speed<A, T> &s, const T &a)
+    {
+        return Speed<A, T>{s.value / a};
+    }
+
+    // scalar = A[unit] / A[unit]
+    template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, NumericalType T>
+    constexpr T operator/(const Speed<A, T> &a, const Speed<B, T> &b)
+    {
+        return a.value / b.template convert<A>().value;
     }
 
     template <typename Op, SPEED_REPRESENTATION A, NumericalType T>
