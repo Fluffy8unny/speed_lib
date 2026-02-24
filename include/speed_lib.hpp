@@ -47,168 +47,35 @@ namespace speed_lib
         static constexpr T value{1.0 / conversion_value};                              \
     };
 
-    // MS conversion
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::MS, SPEED_REPRESENTATION::KMH, T>
-    {
-        static constexpr T value{MS_TO_KMH};
-    };
-
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::MS, SPEED_REPRESENTATION::MPH, T>
-    {
-        static constexpr T value{MS_TO_MPH};
-    };
-
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::MS, SPEED_REPRESENTATION::KNT, T>
-    {
-        static constexpr T value{1.0 / KNT_TO_MS};
-    };
-
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::MS, SPEED_REPRESENTATION::C, T>
-    {
-        static constexpr T value{1.0 / C_TO_MS};
-    };
-
-    // KMH conversion
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::KMH, SPEED_REPRESENTATION::MS, T>
-    {
-        static constexpr T value{1.0 / MS_TO_KMH};
-    };
-
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::KMH, SPEED_REPRESENTATION::MPH, T>
-    {
-        static constexpr T value{1.0 / MPH_TO_KMH};
-    };
-
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::KMH, SPEED_REPRESENTATION::KNT, T>
-    {
-        static constexpr T value{1.0 / KNT_TO_KMH};
-    };
-
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::KMH, SPEED_REPRESENTATION::C, T>
-    {
-        static constexpr T value{1.0 / C_TO_KMH};
-    };
-
-    // MPH conversion
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::MPH, SPEED_REPRESENTATION::MS, T>
-    {
-        static constexpr T value{1.0 / MS_TO_MPH};
-    };
-
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::MPH, SPEED_REPRESENTATION::KMH, T>
-    {
-        static constexpr T value{MPH_TO_KMH};
-    };
-
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::MPH, SPEED_REPRESENTATION::KNT, T>
-    {
-        static constexpr T value{1.0 / KNT_TO_MPH};
-    };
-
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::MPH, SPEED_REPRESENTATION::C, T>
-    {
-        static constexpr T value{1.0 / C_TO_MPH};
-    };
-
-    // Knots conversion
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::KNT, SPEED_REPRESENTATION::MS, T>
-    {
-        static constexpr T value{KNT_TO_MS};
-    };
-
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::KNT, SPEED_REPRESENTATION::KMH, T>
-    {
-        static constexpr T value{KNT_TO_KMH};
-    };
-
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::KNT, SPEED_REPRESENTATION::MPH, T>
-    {
-        static constexpr T value{KNT_TO_MPH};
-    };
-
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::KNT, SPEED_REPRESENTATION::C, T>
-    {
-        static constexpr T value{1.0 / C_TO_KNT};
-    };
-
-    // C conversion
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::C, SPEED_REPRESENTATION::MS, T>
-    {
-        static constexpr T value{C_TO_MS};
-    };
-
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::C, SPEED_REPRESENTATION::KMH, T>
-    {
-        static constexpr T value{C_TO_KMH};
-    };
-
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::C, SPEED_REPRESENTATION::MPH, T>
-    {
-        static constexpr T value{C_TO_MPH};
-    };
-
-    template <Number T>
-    struct SpeedConversionMap<SPEED_REPRESENTATION::C, SPEED_REPRESENTATION::KNT, T>
-    {
-        static constexpr T value{C_TO_KNT};
-    };
+    DEFINE_CONVERSION(MS, KMH, MS_TO_KMH)
+    DEFINE_CONVERSION(MS, MPH, MS_TO_MPH)
+    DEFINE_CONVERSION(MPH, KMH, MPH_TO_KMH)
+    DEFINE_CONVERSION(KNT, MS, KNT_TO_MS)
+    DEFINE_CONVERSION(KNT, KMH, KNT_TO_KMH)
+    DEFINE_CONVERSION(KNT, MPH, KNT_TO_MPH)
+    DEFINE_CONVERSION(C, MS, C_TO_MS)
+    DEFINE_CONVERSION(C, KMH, C_TO_KMH)
+    DEFINE_CONVERSION(C, MPH, C_TO_MPH)
+    DEFINE_CONVERSION(C, KNT, C_TO_KNT)
+#undef DEFINE_CONVERSION
 
     template <SPEED_REPRESENTATION A>
     struct SpeedLiteralMap;
 
-    template <>
-    struct SpeedLiteralMap<SPEED_REPRESENTATION::MS>
-    {
-        static constexpr const char *suffix = "ms";
-        static constexpr const char *format_specifier = "m/s";
+#define DEFINE_LITERAL_MAP(unit, _suffix, _format_specifier)               \
+    template <>                                                            \
+    struct SpeedLiteralMap<SPEED_REPRESENTATION::unit>                     \
+    {                                                                      \
+        static constexpr const char *suffix = _suffix;                     \
+        static constexpr const char *format_specifier = _format_specifier; \
     };
 
-    template <>
-    struct SpeedLiteralMap<SPEED_REPRESENTATION::KMH>
-    {
-        static constexpr const char *suffix = "kmh";
-        static constexpr const char *format_specifier = "km/h";
-    };
-
-    template <>
-    struct SpeedLiteralMap<SPEED_REPRESENTATION::MPH>
-    {
-        static constexpr const char *suffix = "mph";
-        static constexpr const char *format_specifier = "mi/h";
-    };
-
-    template <>
-    struct SpeedLiteralMap<SPEED_REPRESENTATION::KNT>
-    {
-        static constexpr const char *suffix = "knt";
-        static constexpr const char *format_specifier = "knt";
-    };
-
-    template <>
-    struct SpeedLiteralMap<SPEED_REPRESENTATION::C>
-    {
-        static constexpr const char *suffix = "c";
-        static constexpr const char *format_specifier = "c";
-    };
+    DEFINE_LITERAL_MAP(MS, "ms", "m/s")
+    DEFINE_LITERAL_MAP(KMH, "kmh", "km/h")
+    DEFINE_LITERAL_MAP(MPH, "mph", "mi/h")
+    DEFINE_LITERAL_MAP(KNT, "knt", "knt")
+    DEFINE_LITERAL_MAP(C, "c", "c")
+#undef DEFINE_LITERAL_MAP
 
     // Value is tagged with its representation to allow for implicit conversions and operator overloads that handle different representations.
     template <SPEED_REPRESENTATION U, typename T>
@@ -253,31 +120,18 @@ namespace speed_lib
             return os << std::format("{}", s);
         }
     };
-
-    constexpr Speed<SPEED_REPRESENTATION::MS, LiteralBase> operator""_ms(LiteralBase value)
-    {
-        return Speed<SPEED_REPRESENTATION::MS, LiteralBase>{value};
+#define DEFINE_LITERAL_OPERATOR(unit, suffix)                                                       \
+    constexpr Speed<SPEED_REPRESENTATION::unit, LiteralBase> operator""_##suffix(LiteralBase value) \
+    {                                                                                               \
+        return Speed<SPEED_REPRESENTATION::unit, LiteralBase>{value};                               \
     }
 
-    constexpr Speed<SPEED_REPRESENTATION::KMH, LiteralBase> operator""_kmh(LiteralBase value)
-    {
-        return Speed<SPEED_REPRESENTATION::KMH, LiteralBase>{value};
-    }
-
-    constexpr Speed<SPEED_REPRESENTATION::MPH, LiteralBase> operator""_mph(LiteralBase value)
-    {
-        return Speed<SPEED_REPRESENTATION::MPH, LiteralBase>{value};
-    }
-
-    constexpr Speed<SPEED_REPRESENTATION::KNT, LiteralBase> operator""_knt(LiteralBase value)
-    {
-        return Speed<SPEED_REPRESENTATION::KNT, LiteralBase>{value};
-    }
-
-    constexpr Speed<SPEED_REPRESENTATION::C, LiteralBase> operator""_c(LiteralBase value)
-    {
-        return Speed<SPEED_REPRESENTATION::C, LiteralBase>{value};
-    }
+    DEFINE_LITERAL_OPERATOR(MS, ms)
+    DEFINE_LITERAL_OPERATOR(KMH, kmh)
+    DEFINE_LITERAL_OPERATOR(MPH, mph)
+    DEFINE_LITERAL_OPERATOR(KNT, knt)
+    DEFINE_LITERAL_OPERATOR(C, c)
+#undef DEFINE_LITERAL_OPERATOR
 
     template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, Number T>
     constexpr Speed<A, T> operator+(const Speed<A, T> &a, const Speed<B, T> &b)
@@ -333,17 +187,19 @@ namespace speed_lib
     };
     constexpr bool is_digit(char c) { return c >= '0' && c <= '9'; }
 
-    constexpr std::optional<unsigned> parse_unsigned_at(std::string_view s, std::size_t &i)
+    constexpr std::optional<unsigned> parse_unsigned_at(std::string_view s, std::size_t &cursor)
     {
-        if (i >= s.size() || !is_digit(s[i]))
+        if (cursor >= s.size())
             return std::nullopt;
 
-        unsigned v = 0;
-        while (i < s.size() && is_digit(s[i]))
-        {
-            v = v * 10u + static_cast<unsigned>(s[i] - '0');
-            ++i;
-        }
+        const auto tail = s.substr(cursor);
+
+        unsigned v{};
+        const auto [ptr, ec] = std::from_chars(tail.data(), tail.data() + tail.size(), v, 10);
+        if (ptr == tail.data() or ec != std::errc{})
+            return std::nullopt;
+
+        cursor += static_cast<std::size_t>(ptr - tail.data());
         return v;
     }
 
@@ -354,7 +210,7 @@ namespace speed_lib
 
         auto take = [&](char c) constexpr -> bool
         {
-            return cursor < s.size() && s[cursor] == c ? (++cursor, true) : false;
+            return cursor < s.size() and s[cursor] == c ? (++cursor, true) : false;
         };
 
         ParsedView out{};
