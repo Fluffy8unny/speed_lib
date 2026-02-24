@@ -109,3 +109,31 @@ TEST(SpeedConversion, RoundTrip)
     auto back = static_cast<Speed<SPEED_REPRESENTATION::MS, double>>(kmh);
     EXPECT_NEAR(back.value, s.value, 1e-12);
 }
+
+TEST(SpeedConversion, ValueTypeConversionOperator)
+{
+    Speed<SPEED_REPRESENTATION::KMH, double> s{36.5};
+    const double value = static_cast<double>(s);
+    EXPECT_DOUBLE_EQ(value, 36.5);
+}
+
+TEST(SpeedConversion, ValueTypeImplicitConversionOperator)
+{
+    Speed<SPEED_REPRESENTATION::KMH, double> s{36.5};
+    const double value = s;
+    EXPECT_DOUBLE_EQ(value, 36.5);
+}
+
+TEST(SpeedConversion, ValueTypeConversionOperatorInt)
+{
+    Speed<SPEED_REPRESENTATION::KMH, int> s{36};
+    const int value = static_cast<int>(s);
+    EXPECT_EQ(value, 36);
+}
+
+TEST(SpeedConversion, ValueTypeConversionOperatorUnsigned)
+{
+    Speed<SPEED_REPRESENTATION::KMH, unsigned> s{36U};
+    const unsigned value = static_cast<unsigned>(s);
+    EXPECT_EQ(value, 36U);
+}

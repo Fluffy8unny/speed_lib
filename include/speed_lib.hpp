@@ -89,6 +89,11 @@ namespace speed_lib
             return convert<OUT>();
         }
 
+        constexpr operator T() const
+        {
+            return value;
+        }
+
         // Convert enclosed value to another type
         template <typename V>
             requires std::is_convertible_v<V, T>
