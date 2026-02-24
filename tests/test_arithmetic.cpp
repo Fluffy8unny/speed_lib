@@ -177,8 +177,8 @@ TEST(ArithmeticTests, UnsignedIntegerDivisionBySpeed)
 TEST(ArithmeticTest, ArrayAddition)
 {
     std::array<Speed<SPEED_REPRESENTATION::MS, double>, 3> speeds1{10.0_ms, 20.0_ms, 36.0_kmh};
-    std::array<Speed<SPEED_REPRESENTATION::MS, double>, 3> speeds2{1.0_ms, 2.0_ms, 3.0_ms};
-    std::array<Speed<SPEED_REPRESENTATION::MS, double>, 3> expected{11.0_ms, 22.0_ms, 13.0_ms};
+    std::array<Speed<SPEED_REPRESENTATION::MS, double>, 3> speeds2{1.0_ms, 7.2_kmh, 3.0_ms};
+    std::array<Speed<SPEED_REPRESENTATION::MS, double>, 3> expected{39.6_kmh, 22.0_ms, 13.0_ms};
 
     for (size_t i = 0; i < speeds1.size(); ++i)
     {

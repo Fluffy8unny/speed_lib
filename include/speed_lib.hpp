@@ -16,6 +16,13 @@ namespace speed_lib
         C    //<= speed of light
     };
 
+#define SPEED_REPRESENTATION_TEMPLATE_LIST \
+    SPEED_REPRESENTATION::MS,              \
+        SPEED_REPRESENTATION::KMH,         \
+        SPEED_REPRESENTATION::MPH,         \
+        SPEED_REPRESENTATION::KNT,         \
+        SPEED_REPRESENTATION::C
+
     template <typename T>
     concept NumericalType = std::is_arithmetic_v<T>;
     constexpr SPEED_REPRESENTATION DefaultSpeedRepresentation = SPEED_REPRESENTATION::MS;
@@ -118,6 +125,7 @@ namespace speed_lib
     DEFINE_LITERAL_OPERATOR(KNT, knt)
     DEFINE_LITERAL_OPERATOR(C, c)
 #undef DEFINE_LITERAL_OPERATOR
+
     // The whole reason this library exists is to add units
     // This is why the overloads represent proper unit-aware operations instead of just converting to a common representation and doing the operation there.
 
@@ -215,27 +223,25 @@ namespace speed_lib
         return true;
     }
 
-    // Grammar: (ms|kmh|mph|knt|c)([0-9]+)?(\.[0-9]+f)? why is there no constexpr regex in C++23 FML
+    template <SPEED_REPRESENTATION... Units>
+    constexpr bool try_parse_any_unit(std::string_view s, std::size_t &cursor, ParsedView &out)
+    {
+        return (try_parse_unit<Units>(s, cursor, out) or ...);
+    }
+
+    // Grammar: (ms|kmh|mph|knt|c)([0-9]+)?\.([0-9]+)f? why is there no constexpr regex in C++23 FML
     constexpr std::optional<ParsedView> parse_speed(std::string_view s)
     {
         std::size_t cursor = 0;
-
         auto consumeCharacter = [&](char c) constexpr -> bool
         {
             return cursor < s.size() and s[cursor] == c ? (++cursor, true) : false;
         };
 
         ParsedView result{};
-
         // unit
-        if (!(try_parse_unit<SPEED_REPRESENTATION::MS>(s, cursor, result) or
-              try_parse_unit<SPEED_REPRESENTATION::KMH>(s, cursor, result) or
-              try_parse_unit<SPEED_REPRESENTATION::MPH>(s, cursor, result) or
-              try_parse_unit<SPEED_REPRESENTATION::KNT>(s, cursor, result) or
-              try_parse_unit<SPEED_REPRESENTATION::C>(s, cursor, result)))
-        {
+        if (!try_parse_any_unit<SPEED_REPRESENTATION_TEMPLATE_LIST>(s, cursor, result))
             return std::nullopt;
-        }
 
         // optional width digits
         if (auto w = parse_unsigned_at(s, cursor))
