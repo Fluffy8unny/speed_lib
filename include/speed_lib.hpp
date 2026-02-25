@@ -165,14 +165,14 @@ namespace speed_lib
     using LiteralBase = long double;
     using LiteralBaseInt = long long;
 
-#define DEFINE_LITERAL_OPERATOR(TagType, RepresentationType, unit, suffix)                                              \
-    constexpr Quantity<TagType, RepresentationType::unit, LiteralBase> operator""_##suffix(LiteralBase value)           \
-    {                                                                                                                   \
-        return Quantity<TagType, RepresentationType::unit, LiteralBase>{value};                                         \
-    }                                                                                                                   \
-    constexpr Quantity<TagType, RepresentationType::unit, LiteralBaseInt> operator""_##suffix(unsigned long long value) \
-    {                                                                                                                   \
-        return Quantity<TagType, RepresentationType::unit, LiteralBaseInt>{static_cast<LiteralBaseInt>(value)};         \
+#define DEFINE_LITERAL_OPERATOR(TagType, UnitType, unit, suffix)                                              \
+    constexpr Quantity<TagType, UnitType::unit, LiteralBase> operator""_##suffix(LiteralBase value)           \
+    {                                                                                                         \
+        return Quantity<TagType, UnitType::unit, LiteralBase>{value};                                         \
+    }                                                                                                         \
+    constexpr Quantity<TagType, UnitType::unit, LiteralBaseInt> operator""_##suffix(unsigned long long value) \
+    {                                                                                                         \
+        return Quantity<TagType, UnitType::unit, LiteralBaseInt>{static_cast<LiteralBaseInt>(value)};         \
     }
 
     DEFINE_LITERAL_OPERATOR(SpeedTag, SPEED_UNIT, MS, ms)

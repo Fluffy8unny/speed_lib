@@ -114,6 +114,16 @@ TEST(ArithmeticTests, IntegerMultiplicationScalarOnLeft)
     EXPECT_EQ(result.value, 20);
 }
 
+TEST(ArithmeticTests, IntegerMultiplicationScalarOnLeftImplicitCast)
+{
+    const auto speed = Speed<SPEED_UNIT::MS, int>{10};
+    const auto intermediate = 0.5 * speed;
+    EXPECT_TRUE((std::is_same_v<std::remove_cvref_t<decltype(intermediate)>, Speed<SPEED_UNIT::MS, double>>));
+
+    const Speed<SPEED_UNIT::MS, int> result = intermediate;
+    EXPECT_EQ(result.value, 5);
+}
+
 TEST(ArithmeticTests, IntegerDivision)
 {
     auto s1 = Speed<SPEED_UNIT::MS, int>{10};
