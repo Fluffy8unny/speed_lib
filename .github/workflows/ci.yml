@@ -9,6 +9,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      CC: gcc-14
+      CXX: g++-14
 
     steps:
       - name: Checkout
@@ -17,10 +20,15 @@ jobs:
       - name: Install deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build g++ libgtest-dev
+          sudo apt-get install -y cmake ninja-build gcc-14 g++-14 libgtest-dev
+
+      - name: Show compiler
+        run: |
+          $CC --version
+          $CXX --version
 
       - name: Configure
-        run: cmake -S . -B build -G Ninja -DBUILD_TESTING=ON
+        run: cmake -S . -B build -G Ninja -DBUILD_TESTING=ON -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX
 
       - name: Build
         run: cmake --build build
