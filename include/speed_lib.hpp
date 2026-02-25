@@ -1,19 +1,53 @@
+#include <algorithm>
+#include <charconv>
 #include <concepts>
-#include <type_traits>
+#include <cstring>
 #include <format>
 #include <functional>
 #include <iostream>
-#include <cstring>
+#include <optional>
+#include <string_view>
+#include <type_traits>
 
 namespace speed_lib
 {
+    template <typename T>
+    concept NumericalType = std::is_arithmetic_v<T>;
+
+    struct SpeedTag
+    {
+    };
+
+    struct TimeTag
+    {
+    };
+
+    struct LengthTag
+    {
+    };
+
     enum class SPEED_REPRESENTATION : char
     {
-        MS,  ///< meters per second
-        KMH, ///< kilometers per hour
-        MPH, ///< miles per hour
-        KNT, ///< knots
-        C    ///< speed of light
+        MS,
+        KMH,
+        MPH,
+        KNT,
+        C
+    };
+
+    enum class TIME_REPRESENTATION : char
+    {
+        S,
+        MIN,
+        H
+    };
+
+    enum class LENGTH_REPRESENTATION : char
+    {
+        M,
+        KM,
+        MI,
+        FT
     };
 
 #define SPEED_REPRESENTATION_TEMPLATE_LIST \
@@ -23,173 +57,185 @@ namespace speed_lib
         SPEED_REPRESENTATION::KNT,         \
         SPEED_REPRESENTATION::C
 
-    template <typename T>
-    concept NumericalType = std::is_arithmetic_v<T>;
+#define TIME_REPRESENTATION_TEMPLATE_LIST \
+    TIME_REPRESENTATION::S,               \
+        TIME_REPRESENTATION::MIN,         \
+        TIME_REPRESENTATION::H
+
+#define LENGTH_REPRESENTATION_TEMPLATE_LIST \
+    LENGTH_REPRESENTATION::M,               \
+        LENGTH_REPRESENTATION::KM,          \
+        LENGTH_REPRESENTATION::MI,          \
+        LENGTH_REPRESENTATION::FT
+
     constexpr SPEED_REPRESENTATION DefaultSpeedRepresentation = SPEED_REPRESENTATION::MS;
+    constexpr TIME_REPRESENTATION DefaultTimeRepresentation = TIME_REPRESENTATION::S;
+    constexpr LENGTH_REPRESENTATION DefaultLengthRepresentation = LENGTH_REPRESENTATION::M;
+
     using LiteralBase = long double;
 
-    template <SPEED_REPRESENTATION>
-    struct UnitScaleToMs;
+    template <typename Tag, auto Unit>
+    struct UnitTraits;
 
-#define DEFINE_UNIT_SCALE_TO_MS(unit, scale)         \
-    template <>                                      \
-    struct UnitScaleToMs<SPEED_REPRESENTATION::unit> \
-    {                                                \
-        static constexpr long double value{scale};   \
-    };
-
-    DEFINE_UNIT_SCALE_TO_MS(MS, 1.0L)
-    DEFINE_UNIT_SCALE_TO_MS(KMH, 1000.0L / 3600.0L)
-    DEFINE_UNIT_SCALE_TO_MS(MPH, 1609.344L / 3600.0L)
-    DEFINE_UNIT_SCALE_TO_MS(KNT, 1852.0L / 3600.0L)
-    DEFINE_UNIT_SCALE_TO_MS(C, 299792458.0L)
-#undef DEFINE_UNIT_SCALE_TO_MS
-
-    template <SPEED_REPRESENTATION FROM, SPEED_REPRESENTATION TO, NumericalType T>
-    struct SpeedConversionMap
-    {
-        static constexpr T value{static_cast<T>(UnitScaleToMs<FROM>::value / UnitScaleToMs<TO>::value)};
-    };
-
-    template <SPEED_REPRESENTATION A>
-    struct SpeedLiteralMap;
-
-#define DEFINE_LITERAL_MAP(unit, _suffix, _format_specifier)               \
+#define DEFINE_UNIT_TRAITS(tag, unit, scale, _suffix, _format_specifier)   \
     template <>                                                            \
-    struct SpeedLiteralMap<SPEED_REPRESENTATION::unit>                     \
+    struct UnitTraits<tag, unit>                                           \
     {                                                                      \
+        static constexpr long double scale_to_base{scale};                 \
         static constexpr const char *suffix = _suffix;                     \
         static constexpr const char *format_specifier = _format_specifier; \
     };
 
-    DEFINE_LITERAL_MAP(MS, "ms", "m/s")
-    DEFINE_LITERAL_MAP(KMH, "kmh", "km/h")
-    DEFINE_LITERAL_MAP(MPH, "mph", "mi/h")
-    DEFINE_LITERAL_MAP(KNT, "knt", "knt")
-    DEFINE_LITERAL_MAP(C, "c", "c")
-#undef DEFINE_LITERAL_MAP
+    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_REPRESENTATION::MS, 1.0L, "ms", "m/s")
+    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_REPRESENTATION::KMH, 1000.0L / 3600.0L, "kmh", "km/h")
+    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_REPRESENTATION::MPH, 1609.344L / 3600.0L, "mph", "mi/h")
+    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_REPRESENTATION::KNT, 1852.0L / 3600.0L, "knt", "knt")
+    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_REPRESENTATION::C, 299792458.0L, "c", "c")
 
-    // Value is tagged with its representation to allow for implicit conversions and operator overloads that handle different representations.
-    template <SPEED_REPRESENTATION U, typename T>
+    DEFINE_UNIT_TRAITS(TimeTag, TIME_REPRESENTATION::S, 1.0L, "s", "s")
+    DEFINE_UNIT_TRAITS(TimeTag, TIME_REPRESENTATION::MIN, 60.0L, "min", "min")
+    DEFINE_UNIT_TRAITS(TimeTag, TIME_REPRESENTATION::H, 3600.0L, "h", "h")
+
+    DEFINE_UNIT_TRAITS(LengthTag, LENGTH_REPRESENTATION::M, 1.0L, "m", "m")
+    DEFINE_UNIT_TRAITS(LengthTag, LENGTH_REPRESENTATION::KM, 1000.0L, "km", "km")
+    DEFINE_UNIT_TRAITS(LengthTag, LENGTH_REPRESENTATION::MI, 1609.344L, "mi", "mi")
+    DEFINE_UNIT_TRAITS(LengthTag, LENGTH_REPRESENTATION::FT, 0.3048L, "ft", "ft")
+
+#undef DEFINE_UNIT_TRAITS
+
+    template <typename Tag, auto FROM, auto TO, NumericalType T>
+    struct ConversionMap
+    {
+        static constexpr T value{static_cast<T>(UnitTraits<Tag, FROM>::scale_to_base / UnitTraits<Tag, TO>::scale_to_base)};
+    };
+
+    template <typename Tag, auto U, typename T>
         requires NumericalType<T>
-    struct Speed
+    struct Quantity
     {
         T value;
 
-        // Convert speed to another representation
-        template <SPEED_REPRESENTATION OUT>
-        constexpr Speed<OUT, T> convert() const
+        template <auto OUT>
+        constexpr Quantity<Tag, OUT, T> convert() const
         {
-            return Speed<OUT, T>{value * SpeedConversionMap<U, OUT, T>::value};
+            return Quantity<Tag, OUT, T>{value * ConversionMap<Tag, U, OUT, T>::value};
         }
 
-        template <SPEED_REPRESENTATION OUT>
-        constexpr operator Speed<OUT, T>() const
+        template <auto OUT>
+        constexpr operator Quantity<Tag, OUT, T>() const
         {
             return convert<OUT>();
         }
 
-        // get the raw value without converting units
         constexpr operator T() const
         {
             return value;
         }
 
-        // Convert enclosed value to another type
         template <typename V>
-            requires std::is_convertible_v<V, T>
-        constexpr operator Speed<U, V>() const
+            requires std::is_convertible_v<T, V>
+        constexpr operator Quantity<Tag, U, V>() const
         {
-            return Speed<U, V>{static_cast<V>(value)};
+            return Quantity<Tag, U, V>{static_cast<V>(value)};
         }
 
-        // Convert both representation and value type
-        template <SPEED_REPRESENTATION OUT, typename V>
-            requires std::is_convertible_v<V, T>
-        constexpr operator Speed<OUT, V>() const
+        template <auto OUT, typename V>
+            requires std::is_convertible_v<T, V>
+        constexpr operator Quantity<Tag, OUT, V>() const
         {
-            const auto converted_speed = convert<OUT>();
-            return static_cast<Speed<OUT, V>>(converted_speed);
+            const auto converted_quantity = convert<OUT>();
+            return static_cast<Quantity<Tag, OUT, V>>(converted_quantity);
         }
 
-        // std::cout and so on
-        friend std::ostream &operator<<(std::ostream &os, const Speed &s)
+        friend std::ostream &operator<<(std::ostream &os, const Quantity &q)
         {
-            return os << std::format("{}", s);
+            return os << q.value << ' ' << UnitTraits<Tag, U>::format_specifier;
         }
     };
 
-#define DEFINE_LITERAL_OPERATOR(unit, suffix)                                                       \
-    constexpr Speed<SPEED_REPRESENTATION::unit, LiteralBase> operator""_##suffix(LiteralBase value) \
-    {                                                                                               \
-        return Speed<SPEED_REPRESENTATION::unit, LiteralBase>{value};                               \
+    template <SPEED_REPRESENTATION U, typename T>
+    using Speed = Quantity<SpeedTag, U, T>;
+
+    template <TIME_REPRESENTATION U, typename T>
+    using Time = Quantity<TimeTag, U, T>;
+
+    template <LENGTH_REPRESENTATION U, typename T>
+    using Length = Quantity<LengthTag, U, T>;
+
+    template <SPEED_REPRESENTATION U>
+    using SpeedLiteralMap = UnitTraits<SpeedTag, U>;
+
+#define DEFINE_LITERAL_OPERATOR_GENERIC(TagType, RepresentationType, unit, suffix)                            \
+    constexpr Quantity<TagType, RepresentationType::unit, LiteralBase> operator""_##suffix(LiteralBase value) \
+    {                                                                                                         \
+        return Quantity<TagType, RepresentationType::unit, LiteralBase>{value};                               \
     }
 
-    DEFINE_LITERAL_OPERATOR(MS, ms)
-    DEFINE_LITERAL_OPERATOR(KMH, kmh)
-    DEFINE_LITERAL_OPERATOR(MPH, mph)
-    DEFINE_LITERAL_OPERATOR(KNT, knt)
-    DEFINE_LITERAL_OPERATOR(C, c)
-#undef DEFINE_LITERAL_OPERATOR
+    DEFINE_LITERAL_OPERATOR_GENERIC(SpeedTag, SPEED_REPRESENTATION, MS, ms)
+    DEFINE_LITERAL_OPERATOR_GENERIC(SpeedTag, SPEED_REPRESENTATION, KMH, kmh)
+    DEFINE_LITERAL_OPERATOR_GENERIC(SpeedTag, SPEED_REPRESENTATION, MPH, mph)
+    DEFINE_LITERAL_OPERATOR_GENERIC(SpeedTag, SPEED_REPRESENTATION, KNT, knt)
+    DEFINE_LITERAL_OPERATOR_GENERIC(SpeedTag, SPEED_REPRESENTATION, C, c)
 
-    // The whole reason this library exists is to add units
-    // This is why the overloads represent proper unit-aware operations instead of just converting to a common representation and doing the operation there.
+    DEFINE_LITERAL_OPERATOR_GENERIC(TimeTag, TIME_REPRESENTATION, S, s)
+    DEFINE_LITERAL_OPERATOR_GENERIC(TimeTag, TIME_REPRESENTATION, MIN, min)
+    DEFINE_LITERAL_OPERATOR_GENERIC(TimeTag, TIME_REPRESENTATION, H, h)
 
-    // C[unit] = A[unit] + B[unit]
-    template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, NumericalType T>
-    constexpr Speed<A, T> operator+(const Speed<A, T> &a, const Speed<B, T> &b)
+    DEFINE_LITERAL_OPERATOR_GENERIC(LengthTag, LENGTH_REPRESENTATION, M, m)
+    DEFINE_LITERAL_OPERATOR_GENERIC(LengthTag, LENGTH_REPRESENTATION, KM, km)
+    DEFINE_LITERAL_OPERATOR_GENERIC(LengthTag, LENGTH_REPRESENTATION, MI, mi)
+    DEFINE_LITERAL_OPERATOR_GENERIC(LengthTag, LENGTH_REPRESENTATION, FT, ft)
+#undef DEFINE_LITERAL_OPERATOR_GENERIC
+
+    template <typename Op, typename Tag, auto A, NumericalType T>
+        requires std::is_invocable_r_v<T, Op, T, T>
+    constexpr Quantity<Tag, A, T> apply_binary_op(const Quantity<Tag, A, T> &lhs, const Quantity<Tag, A, T> &rhs, Op op)
+    {
+        return Quantity<Tag, A, T>{op(lhs.value, rhs.value)};
+    }
+
+    template <typename Op, typename Tag, auto A, auto B, NumericalType T>
+        requires std::is_invocable_r_v<T, Op, T, T>
+    constexpr Quantity<Tag, A, T> apply_binary_op(const Quantity<Tag, A, T> &lhs, const Quantity<Tag, B, T> &rhs, Op op)
+    {
+        const auto rhs_converted = rhs.template convert<A>();
+        return Quantity<Tag, A, T>{op(lhs.value, rhs_converted.value)};
+    }
+
+    template <typename Tag, auto A, auto B, NumericalType T>
+    constexpr Quantity<Tag, A, T> operator+(const Quantity<Tag, A, T> &a, const Quantity<Tag, B, T> &b)
     {
         return apply_binary_op(a, b, std::plus<T>{});
     }
 
-    // C[unit] = A[unit] - B[unit]
-    template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, NumericalType T>
-    constexpr Speed<A, T> operator-(const Speed<A, T> &a, const Speed<B, T> &b)
+    template <typename Tag, auto A, auto B, NumericalType T>
+    constexpr Quantity<Tag, A, T> operator-(const Quantity<Tag, A, T> &a, const Quantity<Tag, B, T> &b)
     {
         return apply_binary_op(a, b, std::minus<T>{});
     }
 
-    // A[unit] = A[unit] * scalar
-    template <SPEED_REPRESENTATION A, NumericalType T>
-    constexpr Speed<A, T> operator*(const Speed<A, T> &s, const T a)
+    template <typename Tag, auto A, NumericalType T>
+    constexpr Quantity<Tag, A, T> operator*(const Quantity<Tag, A, T> &s, const T a)
     {
-        return Speed<A, T>{s.value * a};
+        return Quantity<Tag, A, T>{s.value * a};
     }
 
-    // A[unit] = scalar * A[unit]
-    template <SPEED_REPRESENTATION A, NumericalType T>
-    constexpr Speed<A, T> operator*(const T a, const Speed<A, T> &s)
+    template <typename Tag, auto A, NumericalType T>
+    constexpr Quantity<Tag, A, T> operator*(const T a, const Quantity<Tag, A, T> &s)
     {
-        return Speed<A, T>{a * s.value};
+        return Quantity<Tag, A, T>{a * s.value};
     }
 
-    // A[unit] = A[unit] / scalar. We have no way to invert units, so we can't do scalar / A[unit]
-    template <SPEED_REPRESENTATION A, NumericalType T>
-    constexpr Speed<A, T> operator/(const Speed<A, T> &s, const T &a)
+    template <typename Tag, auto A, NumericalType T>
+    constexpr Quantity<Tag, A, T> operator/(const Quantity<Tag, A, T> &s, const T &a)
     {
-        return Speed<A, T>{s.value / a};
+        return Quantity<Tag, A, T>{s.value / a};
     }
 
-    // scalar = A[unit] / A[unit]
-    template <SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, NumericalType T>
-    constexpr T operator/(const Speed<A, T> &a, const Speed<B, T> &b)
+    template <typename Tag, auto A, auto B, NumericalType T>
+    constexpr T operator/(const Quantity<Tag, A, T> &a, const Quantity<Tag, B, T> &b)
     {
         return a.value / b.template convert<A>().value;
-    }
-
-    template <typename Op, SPEED_REPRESENTATION A, NumericalType T>
-        requires std::is_invocable_r_v<T, Op, T, T>
-    constexpr Speed<A, T> apply_binary_op(const Speed<A, T> &lhs, const Speed<A, T> &rhs, Op op)
-    {
-        return Speed<A, T>{op(lhs.value, rhs.value)};
-    }
-
-    template <typename Op, SPEED_REPRESENTATION A, SPEED_REPRESENTATION B, NumericalType T>
-        requires std::is_invocable_r_v<T, Op, T, T>
-    constexpr Speed<A, T> apply_binary_op(const Speed<A, T> &lhs, const Speed<B, T> &rhs, Op op)
-    {
-        const auto rhs_converted = rhs.template convert<A>();
-        return Speed<A, T>{op(lhs.value, rhs_converted.value)};
     }
 
     struct ParsedView
@@ -198,8 +244,6 @@ namespace speed_lib
         std::optional<unsigned> width = std::nullopt;
         std::optional<unsigned> precision = std::nullopt;
     };
-
-    constexpr bool is_digit(char c) { return c >= '0' and c <= '9'; }
 
     constexpr std::optional<unsigned> parse_unsigned_at(std::string_view s, std::size_t &cursor)
     {
@@ -217,107 +261,184 @@ namespace speed_lib
         return v;
     }
 
-    template <SPEED_REPRESENTATION R>
+    template <typename Tag, auto R>
     constexpr bool try_parse_unit(std::string_view s, std::size_t &cursor, ParsedView &out)
     {
-        const auto suffix = SpeedLiteralMap<R>::suffix;
+        const auto suffix = UnitTraits<Tag, R>::suffix;
         if (!s.substr(cursor).starts_with(suffix))
             return false;
 
-        out.unit = SpeedLiteralMap<R>::format_specifier;
+        out.unit = UnitTraits<Tag, R>::format_specifier;
         cursor += std::strlen(suffix);
         return true;
     }
 
-    template <SPEED_REPRESENTATION... Units>
+    template <typename Tag, auto... Units>
     constexpr bool try_parse_any_unit(std::string_view s, std::size_t &cursor, ParsedView &out)
     {
-        return (try_parse_unit<Units>(s, cursor, out) or ...);
+        return (try_parse_unit<Tag, Units>(s, cursor, out) or ...);
     }
 
-    // Grammar: (ms|kmh|mph|knt|c)([0-9]+)?\.([0-9]+)f? why is there no constexpr regex in C++23 FML
-    constexpr std::optional<ParsedView> parse_speed(std::string_view s)
+    template <typename Tag, auto... Units>
+    constexpr std::optional<ParsedView> parse_quantity(std::string_view s)
     {
         std::size_t cursor = 0;
-        auto consumeCharacter = [&](char c) constexpr -> bool
+        auto consume_character = [&](char c) constexpr -> bool
         {
             return cursor < s.size() and s[cursor] == c ? (++cursor, true) : false;
         };
 
         ParsedView result{};
-        // unit
-        if (!try_parse_any_unit<SPEED_REPRESENTATION_TEMPLATE_LIST>(s, cursor, result))
+        if (!try_parse_any_unit<Tag, Units...>(s, cursor, result))
             return std::nullopt;
 
-        // optional width
         if (auto w = parse_unsigned_at(s, cursor))
             result.width = *w;
 
-        // optional precision: '.' digits+ 'f'
-        if (consumeCharacter('.'))
+        if (consume_character('.'))
         {
             if (auto p = parse_unsigned_at(s, cursor); p)
                 result.precision = *p;
             else
                 return std::nullopt;
-            if (!consumeCharacter('f'))
+
+            if (!consume_character('f'))
                 return std::nullopt;
         }
 
         if (cursor != s.size())
             return std::nullopt;
+
         return result;
     }
-}
 
-// this needs to be inside of the std namespace to be picked up by std::format
-template <speed_lib::SPEED_REPRESENTATION r, speed_lib::NumericalType T>
-struct std::formatter<speed_lib::Speed<r, T>> : std::formatter<T, char>
-{
-    speed_lib::ParsedView parsed_format;
-    constexpr auto parse(std::format_parse_context &ctx)
+    constexpr std::optional<ParsedView> parse_speed(std::string_view s)
     {
-        auto it = ctx.begin();
-        auto end = ctx.end();
+        return parse_quantity<SpeedTag, SPEED_REPRESENTATION_TEMPLATE_LIST>(s);
+    }
 
-        if (it == end or *it == '}')
+    constexpr std::optional<ParsedView> parse_time(std::string_view s)
+    {
+        return parse_quantity<TimeTag, TIME_REPRESENTATION_TEMPLATE_LIST>(s);
+    }
+
+    constexpr std::optional<ParsedView> parse_length(std::string_view s)
+    {
+        return parse_quantity<LengthTag, LENGTH_REPRESENTATION_TEMPLATE_LIST>(s);
+    }
+
+    template <typename Tag>
+    constexpr const char *formatter_error_message();
+
+    template <>
+    constexpr const char *formatter_error_message<SpeedTag>()
+    {
+        return "invalid format specifier for Speed. Use 'ms', 'kmh', 'knt', 'c', or 'mph', optionally followed by a number with an 'f' suffix (e.g., 'kmh1.5f').";
+    }
+
+    template <>
+    constexpr const char *formatter_error_message<TimeTag>()
+    {
+        return "invalid format specifier for Time. Use 's', 'min', or 'h', optionally followed by a number with an 'f' suffix (e.g., 'min8.2f').";
+    }
+
+    template <>
+    constexpr const char *formatter_error_message<LengthTag>()
+    {
+        return "invalid format specifier for Length. Use 'm', 'km', 'mi', or 'ft', optionally followed by a number with an 'f' suffix (e.g., 'km8.2f').";
+    }
+
+    template <typename Tag, auto Representation, auto DefaultRepresentation, NumericalType T, auto... ValidRepresentations>
+    struct QuantityFormatter : std::formatter<T, char>
+    {
+        ParsedView parsed_format;
+
+        constexpr auto parse(std::format_parse_context &ctx)
         {
-            // use default
-            parsed_format = speed_lib::ParsedView{speed_lib::SpeedLiteralMap<speed_lib::DefaultSpeedRepresentation>::format_specifier, {}, {}};
+            auto it = ctx.begin();
+            auto end = ctx.end();
+
+            if (it == end or *it == '}')
+            {
+                parsed_format = ParsedView{UnitTraits<Tag, DefaultRepresentation>::format_specifier, {}, {}};
+                return it;
+            }
+
+            auto start = it;
+            it = std::find(it, end, '}');
+
+            std::string_view spec{&*start, static_cast<size_t>(it - start)};
+            if (auto parsed = parse_quantity<Tag, ValidRepresentations...>(spec); parsed.has_value())
+                parsed_format = *parsed;
+            else
+                throw std::format_error(formatter_error_message<Tag>());
+
             return it;
         }
 
-        auto start = it;
-        it = std::find(it, end, '}');
+        template <typename FormatContext>
+        auto format(const Quantity<Tag, Representation, T> &quantity, FormatContext &ctx) const
+        {
+            if (parsed_format.width and parsed_format.precision)
+            {
+                std::format_to(ctx.out(), "{:>{}.{}f}", quantity.value, *parsed_format.width, *parsed_format.precision);
+            }
+            else if (parsed_format.width)
+            {
+                std::format_to(ctx.out(), "{:>{}}", quantity.value, *parsed_format.width);
+            }
+            else if (parsed_format.precision)
+            {
+                std::format_to(ctx.out(), "{:.{}f}", quantity.value, *parsed_format.precision);
+            }
+            else
+            {
+                std::format_to(ctx.out(), "{}", quantity.value);
+            }
 
-        std::string_view spec{&*start, static_cast<size_t>(it - start)};
-        if (auto parsed = speed_lib::parse_speed(spec); parsed.has_value())
-            parsed_format = *parsed;
-        else
-            throw std::format_error("invalid format specifier for Speed. Use 'ms', 'kmh', 'knt', 'c', or 'mph', optionally followed by a number with an 'f' suffix (e.g., 'kmh1.5f').");
+            return std::format_to(ctx.out(), " {}", parsed_format.unit);
+        }
+    };
+}
 
-        return it;
-    }
+template <speed_lib::SPEED_REPRESENTATION r, speed_lib::NumericalType T>
+struct std::formatter<speed_lib::Speed<r, T>>
+    : speed_lib::QuantityFormatter<
+          speed_lib::SpeedTag,
+          r,
+          speed_lib::DefaultSpeedRepresentation,
+          T,
+          speed_lib::SPEED_REPRESENTATION::MS,
+          speed_lib::SPEED_REPRESENTATION::KMH,
+          speed_lib::SPEED_REPRESENTATION::MPH,
+          speed_lib::SPEED_REPRESENTATION::KNT,
+          speed_lib::SPEED_REPRESENTATION::C>
+{
+};
 
-    template <typename FormatContext>
-    auto format(const speed_lib::Speed<r, T> &s, FormatContext &ctx) const
-    {
-        if (parsed_format.width and parsed_format.precision)
-        {
-            std::format_to(ctx.out(), "{:>{}.{}f}", s.value, *parsed_format.width, *parsed_format.precision);
-        }
-        else if (parsed_format.width)
-        {
-            std::format_to(ctx.out(), "{:>{}}", s.value, *parsed_format.width);
-        }
-        else if (parsed_format.precision)
-        {
-            std::format_to(ctx.out(), "{:.{}f}", s.value, *parsed_format.precision);
-        }
-        else
-        {
-            std::format_to(ctx.out(), "{}", s.value);
-        }
-        return std::format_to(ctx.out(), " {}", parsed_format.unit);
-    }
+template <speed_lib::TIME_REPRESENTATION r, speed_lib::NumericalType T>
+struct std::formatter<speed_lib::Time<r, T>>
+    : speed_lib::QuantityFormatter<
+          speed_lib::TimeTag,
+          r,
+          speed_lib::DefaultTimeRepresentation,
+          T,
+          speed_lib::TIME_REPRESENTATION::S,
+          speed_lib::TIME_REPRESENTATION::MIN,
+          speed_lib::TIME_REPRESENTATION::H>
+{
+};
+
+template <speed_lib::LENGTH_REPRESENTATION r, speed_lib::NumericalType T>
+struct std::formatter<speed_lib::Length<r, T>>
+    : speed_lib::QuantityFormatter<
+          speed_lib::LengthTag,
+          r,
+          speed_lib::DefaultLengthRepresentation,
+          T,
+          speed_lib::LENGTH_REPRESENTATION::M,
+          speed_lib::LENGTH_REPRESENTATION::KM,
+          speed_lib::LENGTH_REPRESENTATION::MI,
+          speed_lib::LENGTH_REPRESENTATION::FT>
+{
 };
