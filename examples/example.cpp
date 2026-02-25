@@ -33,8 +33,9 @@ int main()
     auto speed2 = 20.0_kmh;
     auto total_speed = speed + speed2;
     std::println("Total speed: {}", total_speed);
-    // Output: Total speed: 25.5556 m/s
-
+    // Output: Total speed: 8.88888888888889 m/s
+    std::println("Total speed: {:kmh}", total_speed);
+    // Output: Total speed: 32 km/h
     // Scalar multiplication and division is allowed
     auto double_speed = 1.0 * speed * 2.0;
     std::println("Double speed: {}", double_speed);

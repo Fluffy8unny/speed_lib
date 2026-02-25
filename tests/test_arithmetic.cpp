@@ -37,6 +37,14 @@ TEST(ArithmeticTests, MultiplicationScalarOnLeft)
     EXPECT_DOUBLE_EQ(result.value, 20.0);
 }
 
+TEST(ArithmeticTests, MultiplicationScalarOnLeftWithDifferentScalarTypeKeepsQuantity)
+{
+    auto s1 = 10.0_ms;
+    auto result = 2.0 * s1;
+    EXPECT_TRUE((std::is_same_v<decltype(result), Speed<SPEED_UNIT::MS, long double>>));
+    EXPECT_DOUBLE_EQ(result.value, 20.0L);
+}
+
 TEST(ArithmeticTests, Division)
 {
     auto s1 = 10.0_ms;

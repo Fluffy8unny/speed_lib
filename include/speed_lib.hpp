@@ -60,9 +60,6 @@ namespace speed_lib
     template <typename Tag>
     using UnitForTag_t = typename UnitForTag<Tag>::type;
 
-    using LiteralBase = long double;
-    using LiteralBaseInt = long long;
-
     template <typename Tag, auto Unit>
     struct UnitTraits;
 
@@ -107,7 +104,7 @@ namespace speed_lib
         template <UnitForTag_t<Tag> OUT>
         constexpr Quantity<Tag, OUT, T> convert() const
         {
-            return Quantity<Tag, OUT, T>{static_cast<T>(static_cast<long double>(value) * ConversionMap<Tag, U, OUT, T>::value)};
+            return Quantity<Tag, OUT, T>{static_cast<T>(value * ConversionMap<Tag, U, OUT, T>::value)};
         }
 
         template <UnitForTag_t<Tag> OUT>
@@ -164,6 +161,9 @@ namespace speed_lib
 
     template <LENGTH_UNIT U, typename T>
     using Length = Quantity<LengthTag, U, T>;
+
+    using LiteralBase = long double;
+    using LiteralBaseInt = long long;
 
 #define DEFINE_LITERAL_OPERATOR(TagType, RepresentationType, unit, suffix)                                              \
     constexpr Quantity<TagType, RepresentationType::unit, LiteralBase> operator""_##suffix(LiteralBase value)           \
@@ -242,16 +242,18 @@ namespace speed_lib
         return Quantity<Tag, A, T>{-q.value};
     }
 
-    template <typename Tag, UnitForTag_t<Tag> A, NumericalType T>
-    constexpr Quantity<Tag, A, T> operator*(const Quantity<Tag, A, T> &s, const T a)
+    template <typename Tag, UnitForTag_t<Tag> A, NumericalType T, NumericalType Scalar>
+    constexpr Quantity<Tag, A, std::common_type_t<T, Scalar>> operator*(const Quantity<Tag, A, T> &s, const Scalar a)
     {
-        return Quantity<Tag, A, T>{s.value * a};
+        using ResultType = std::common_type_t<T, Scalar>;
+        return Quantity<Tag, A, ResultType>{static_cast<ResultType>(s.value) * static_cast<ResultType>(a)};
     }
 
-    template <typename Tag, UnitForTag_t<Tag> A, NumericalType T>
-    constexpr Quantity<Tag, A, T> operator*(const T a, const Quantity<Tag, A, T> &s)
+    template <typename Tag, UnitForTag_t<Tag> A, NumericalType T, NumericalType Scalar>
+    constexpr Quantity<Tag, A, std::common_type_t<T, Scalar>> operator*(const Scalar a, const Quantity<Tag, A, T> &s)
     {
-        return Quantity<Tag, A, T>{a * s.value};
+        using ResultType = std::common_type_t<T, Scalar>;
+        return Quantity<Tag, A, ResultType>{static_cast<ResultType>(a) * static_cast<ResultType>(s.value)};
     }
 
     template <SPEED_UNIT S, TIME_UNIT Ti, NumericalType T>
@@ -270,10 +272,11 @@ namespace speed_lib
         return Quantity<SpeedTag, SPEED_UNIT::MS, T>{length_m.value / time_s.value};
     }
 
-    template <typename Tag, UnitForTag_t<Tag> A, NumericalType T>
-    constexpr Quantity<Tag, A, T> operator/(const Quantity<Tag, A, T> &s, const T &a)
+    template <typename Tag, UnitForTag_t<Tag> A, NumericalType T, NumericalType Scalar>
+    constexpr Quantity<Tag, A, std::common_type_t<T, Scalar>> operator/(const Quantity<Tag, A, T> &s, const Scalar &a)
     {
-        return Quantity<Tag, A, T>{s.value / a};
+        using ResultType = std::common_type_t<T, Scalar>;
+        return Quantity<Tag, A, ResultType>{static_cast<ResultType>(s.value) / static_cast<ResultType>(a)};
     }
 
     template <typename Tag, UnitForTag_t<Tag> A, UnitForTag_t<Tag> B, NumericalType T>
@@ -282,10 +285,11 @@ namespace speed_lib
         return a.value / b.template convert<A>().value;
     }
 
+    template <typename Tag>
     struct ParsedView
     {
         const char *unit = nullptr;
-        std::optional<char> target_representation = std::nullopt;
+        std::optional<UnitForTag_t<Tag>> target_unit = std::nullopt;
         std::optional<unsigned> width = std::nullopt;
         std::optional<unsigned> precision = std::nullopt;
     };
@@ -306,27 +310,27 @@ namespace speed_lib
         return v;
     }
 
-    template <typename Tag, auto R>
-    constexpr bool try_parse_unit(std::string_view s, std::size_t &cursor, ParsedView &out)
+    template <typename Tag, UnitForTag_t<Tag> R>
+    constexpr bool try_parse_unit(std::string_view s, std::size_t &cursor, ParsedView<Tag> &out)
     {
         const auto suffix = UnitTraits<Tag, R>::suffix;
         if (!s.substr(cursor).starts_with(suffix))
             return false;
 
         out.unit = UnitTraits<Tag, R>::format_specifier;
-        out.target_representation = static_cast<char>(R);
+        out.target_unit = R;
         cursor += std::strlen(suffix);
         return true;
     }
 
-    template <typename Tag, auto... Units>
-    constexpr bool try_parse_any_unit(std::string_view s, std::size_t &cursor, ParsedView &out)
+    template <typename Tag, UnitForTag_t<Tag>... Units>
+    constexpr bool try_parse_any_unit(std::string_view s, std::size_t &cursor, ParsedView<Tag> &out)
     {
         return (try_parse_unit<Tag, Units>(s, cursor, out) or ...);
     }
 
-    template <typename Tag, auto... Units>
-    constexpr std::optional<ParsedView> parse_quantity(std::string_view s)
+    template <typename Tag, UnitForTag_t<Tag>... Units>
+    constexpr std::optional<ParsedView<Tag>> parse_quantity(std::string_view s)
     {
         std::size_t cursor = 0;
         auto consume_character = [&](char c) constexpr -> bool
@@ -334,7 +338,7 @@ namespace speed_lib
             return cursor < s.size() and s[cursor] == c ? (++cursor, true) : false;
         };
 
-        ParsedView result{};
+        ParsedView<Tag> result{};
         if (!try_parse_any_unit<Tag, Units...>(s, cursor, result))
             return std::nullopt;
 
@@ -379,18 +383,18 @@ namespace speed_lib
         return "invalid format specifier for Length. Use 'm', 'km', 'mi', or 'ft', optionally followed by a number with an 'f' suffix (e.g., 'km8.2f').";
     }
 
-    template <typename Tag, auto Unit, NumericalType T, auto... ValidUnits>
+    template <typename Tag, UnitForTag_t<Tag> Unit, NumericalType T, UnitForTag_t<Tag>... ValidUnits>
     struct QuantityFormatter : std::formatter<T, char>
     {
-        ParsedView parsed_format;
+        ParsedView<Tag> parsed_format;
 
-        template <auto CandidateUnit, auto... RemainingUnits>
+        template <UnitForTag_t<Tag> CandidateUnit, UnitForTag_t<Tag>... RemainingUnits>
         static constexpr void convert_if_unit_matches(
-            char target_unit,
+            UnitForTag_t<Tag> target_unit,
             const Quantity<Tag, Unit, T> &quantity,
             T &formatted_value)
         {
-            if (target_unit == static_cast<char>(CandidateUnit))
+            if (target_unit == CandidateUnit)
             {
                 formatted_value = quantity.template convert<CandidateUnit>().value;
                 return;
@@ -407,7 +411,7 @@ namespace speed_lib
 
             if (it == end or *it == '}')
             {
-                parsed_format = ParsedView{};
+                parsed_format = ParsedView<Tag>{};
                 return it;
             }
 
@@ -431,9 +435,9 @@ namespace speed_lib
                                   : UnitTraits<Tag, Unit>::format_specifier;
 
             T formatted_value = quantity.value;
-            if (parsed_format.target_representation.has_value())
+            if (parsed_format.target_unit.has_value())
             {
-                const char target_unit = *parsed_format.target_representation;
+                const auto target_unit = *parsed_format.target_unit;
                 convert_if_unit_matches<ValidUnits...>(target_unit, quantity, formatted_value);
             }
 
