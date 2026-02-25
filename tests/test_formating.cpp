@@ -81,6 +81,28 @@ TEST(FormatterTests, PrecisionWithIntegralRepresentationTypeAndUnitConversion)
     EXPECT_EQ(std::format("{:kmh.1f}", s_ms), "36.0 km/h");
 }
 
+TEST(FormatterTests, InvalidSpeedFormatSpecifierErrorMessage)
+{
+    const auto s = 10.0_kmh;
+    const std::string invalid_format = "{:invalid}";
+
+    try
+    {
+        (void)std::vformat(invalid_format, std::make_format_args(s));
+        FAIL() << "Expected std::format_error for invalid speed format specifier";
+    }
+    catch (const std::format_error &e)
+    {
+        EXPECT_EQ(
+            std::string{e.what()},
+            "invalid format specifier for Speed. Use 'ms', 'kmh', 'mph', 'knt', 'c', optionally followed by a number with an 'f' suffix (e.g., 'ms8.2f').");
+    }
+    catch (...)
+    {
+        FAIL() << "Expected std::format_error";
+    }
+}
+
 TEST(TimeFormatting, AllUnits)
 {
     auto t_s = 90.0_s;

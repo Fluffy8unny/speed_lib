@@ -6,6 +6,7 @@
 #include <functional>
 #include <iostream>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <type_traits>
 
@@ -63,29 +64,30 @@ namespace speed_lib
     template <typename DimensionTag, auto Unit>
     struct UnitTraits;
 
-#define DEFINE_UNIT_TRAITS(_tag, _unit, scale, _suffix, _format_specifier) \
-    template <>                                                            \
-    struct UnitTraits<_tag, _unit>                                         \
-    {                                                                      \
-        static constexpr long double scale_to_base{scale};                 \
-        static constexpr const char *suffix = _suffix;                     \
-        static constexpr const char *format_specifier = _format_specifier; \
+#define DEFINE_UNIT_TRAITS(_tag, _unit, scale, _suffix, _format_specifier, _dimension_name) \
+    template <>                                                                             \
+    struct UnitTraits<_tag, _unit>                                                          \
+    {                                                                                       \
+        static constexpr long double scale_to_base{scale};                                  \
+        static constexpr const char *suffix = _suffix;                                      \
+        static constexpr const char *format_specifier = _format_specifier;                  \
+        static constexpr const char *dimension_name = _dimension_name;                      \
     };
 
-    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::MS, 1.0L, "ms", "m/s")
-    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::KMH, 1000.0L / 3600.0L, "kmh", "km/h")
-    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::MPH, 1609.344L / 3600.0L, "mph", "mi/h")
-    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::KNT, 1852.0L / 3600.0L, "knt", "knt")
-    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::C, 299792458.0L, "c", "c")
+    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::MS, 1.0L, "ms", "m/s", "Speed")
+    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::KMH, 1000.0L / 3600.0L, "kmh", "km/h", "Speed")
+    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::MPH, 1609.344L / 3600.0L, "mph", "mi/h", "Speed")
+    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::KNT, 1852.0L / 3600.0L, "knt", "knt", "Speed")
+    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::C, 299792458.0L, "c", "c", "Speed")
 
-    DEFINE_UNIT_TRAITS(TimeTag, TIME_UNIT::S, 1.0L, "s", "s")
-    DEFINE_UNIT_TRAITS(TimeTag, TIME_UNIT::MIN, 60.0L, "min", "min")
-    DEFINE_UNIT_TRAITS(TimeTag, TIME_UNIT::H, 3600.0L, "h", "h")
+    DEFINE_UNIT_TRAITS(TimeTag, TIME_UNIT::S, 1.0L, "s", "s", "Time")
+    DEFINE_UNIT_TRAITS(TimeTag, TIME_UNIT::MIN, 60.0L, "min", "min", "Time")
+    DEFINE_UNIT_TRAITS(TimeTag, TIME_UNIT::H, 3600.0L, "h", "h", "Time")
 
-    DEFINE_UNIT_TRAITS(LengthTag, LENGTH_UNIT::M, 1.0L, "m", "m")
-    DEFINE_UNIT_TRAITS(LengthTag, LENGTH_UNIT::KM, 1000.0L, "km", "km")
-    DEFINE_UNIT_TRAITS(LengthTag, LENGTH_UNIT::MI, 1609.344L, "mi", "mi")
-    DEFINE_UNIT_TRAITS(LengthTag, LENGTH_UNIT::FT, 0.3048L, "ft", "ft")
+    DEFINE_UNIT_TRAITS(LengthTag, LENGTH_UNIT::M, 1.0L, "m", "m", "Length")
+    DEFINE_UNIT_TRAITS(LengthTag, LENGTH_UNIT::KM, 1000.0L, "km", "km", "Length")
+    DEFINE_UNIT_TRAITS(LengthTag, LENGTH_UNIT::MI, 1609.344L, "mi", "mi", "Length")
+    DEFINE_UNIT_TRAITS(LengthTag, LENGTH_UNIT::FT, 0.3048L, "ft", "ft", "Length")
 
 #undef DEFINE_UNIT_TRAITS
 
@@ -362,25 +364,25 @@ namespace speed_lib
         return result;
     }
 
-    template <typename DimensionTag>
-    constexpr const char *formatter_error_message();
-
-    template <>
-    constexpr const char *formatter_error_message<SpeedTag>()
+    template <typename DimensionTag, UnitForTag_t<DimensionTag> FirstUnit, UnitForTag_t<DimensionTag>... RemainingUnits>
+    std::string build_formatter_error_message()
     {
-        return "invalid format specifier for Speed. Use 'ms', 'kmh', 'knt', 'c', or 'mph', optionally followed by a number with an 'f' suffix (e.g., 'kmh1.5f').";
-    }
+        std::string units;
+        auto append_quoted_suffix = [&](const char *suffix)
+        {
+            if (!units.empty())
+                units += ", ";
+            units += std::format("'{}'", suffix);
+        };
 
-    template <>
-    constexpr const char *formatter_error_message<TimeTag>()
-    {
-        return "invalid format specifier for Time. Use 's', 'min', or 'h', optionally followed by a number with an 'f' suffix (e.g., 'min8.2f').";
-    }
+        append_quoted_suffix(UnitTraits<DimensionTag, FirstUnit>::suffix);
+        (append_quoted_suffix(UnitTraits<DimensionTag, RemainingUnits>::suffix), ...);
 
-    template <>
-    constexpr const char *formatter_error_message<LengthTag>()
-    {
-        return "invalid format specifier for Length. Use 'm', 'km', 'mi', or 'ft', optionally followed by a number with an 'f' suffix (e.g., 'km8.2f').";
+        return std::format(
+            "invalid format specifier for {}. Use {}, optionally followed by a number with an 'f' suffix (e.g., '{}8.2f').",
+            UnitTraits<DimensionTag, FirstUnit>::dimension_name,
+            units,
+            UnitTraits<DimensionTag, FirstUnit>::suffix);
     }
 
     template <typename DimensionTag, UnitForTag_t<DimensionTag> Unit, NumericalType T, UnitForTag_t<DimensionTag>... ValidUnits>
@@ -422,7 +424,7 @@ namespace speed_lib
             if (auto parsed = parse_quantity<DimensionTag, ValidUnits...>(spec); parsed.has_value())
                 parsed_format = *parsed;
             else
-                throw std::format_error(formatter_error_message<DimensionTag>());
+                throw std::format_error(build_formatter_error_message<DimensionTag, ValidUnits...>());
 
             return it;
         }
