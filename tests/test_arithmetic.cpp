@@ -263,3 +263,17 @@ TEST(ArithmeticTests, SpaceshipOperatorWithConvertibleQuantities)
     const Speed<SPEED_REPRESENTATION::KMH, double> thirty_six_kmh{36.0};
     EXPECT_TRUE((ten_ms_int <=> thirty_six_kmh) == 0);
 }
+
+TEST(TimeArithmetic, MixedUnitsAddition)
+{
+    auto result = 30.0_s + 1.0_min;
+    EXPECT_TRUE((std::is_same_v<decltype(result), Time<TIME_REPRESENTATION::S, long double>>));
+    EXPECT_DOUBLE_EQ(result.value, 90.0);
+}
+
+TEST(LengthArithmetic, MixedUnitsSubtraction)
+{
+    auto result = 1.0_km - 100.0_m;
+    EXPECT_TRUE((std::is_same_v<decltype(result), Length<LENGTH_REPRESENTATION::KM, long double>>));
+    EXPECT_DOUBLE_EQ(result.value, 0.9);
+}
