@@ -133,7 +133,7 @@ namespace speed_lib
     template <typename Tag, auto FROM, auto TO, NumericalType T>
     struct ConversionMap
     {
-        static constexpr T value{static_cast<T>(UnitTraits<Tag, FROM>::scale_to_base / UnitTraits<Tag, TO>::scale_to_base)};
+        static constexpr long double value{UnitTraits<Tag, FROM>::scale_to_base / UnitTraits<Tag, TO>::scale_to_base};
     };
 
     template <typename Tag, auto U, typename T>
@@ -145,7 +145,7 @@ namespace speed_lib
         template <auto OUT>
         constexpr Quantity<Tag, OUT, T> convert() const
         {
-            return Quantity<Tag, OUT, T>{value * ConversionMap<Tag, U, OUT, T>::value};
+            return Quantity<Tag, OUT, T>{static_cast<T>(static_cast<long double>(value) * ConversionMap<Tag, U, OUT, T>::value)};
         }
 
         template <auto OUT>
@@ -173,7 +173,7 @@ namespace speed_lib
             const auto converted_quantity = convert<OUT>();
             return static_cast<Quantity<Tag, OUT, V>>(converted_quantity);
         }
-        
+
         constexpr auto operator<=>(const Quantity &other) const
         {
             return value <=> other.value;
@@ -206,7 +206,7 @@ namespace speed_lib
     template <SPEED_REPRESENTATION U>
     using SpeedLiteralMap = UnitTraits<SpeedTag, U>;
 
-#define DEFINE_LITERAL_OPERATOR(TagType, RepresentationType, unit, suffix)                            \
+#define DEFINE_LITERAL_OPERATOR(TagType, RepresentationType, unit, suffix)                                    \
     constexpr Quantity<TagType, RepresentationType::unit, LiteralBase> operator""_##suffix(LiteralBase value) \
     {                                                                                                         \
         return Quantity<TagType, RepresentationType::unit, LiteralBase>{value};                               \
@@ -297,7 +297,8 @@ namespace speed_lib
 
     struct ParsedView
     {
-        const char *unit;
+        const char *unit = nullptr;
+        std::optional<char> representation = std::nullopt;
         std::optional<unsigned> width = std::nullopt;
         std::optional<unsigned> precision = std::nullopt;
     };
@@ -326,6 +327,7 @@ namespace speed_lib
             return false;
 
         out.unit = UnitTraits<Tag, R>::format_specifier;
+        out.representation = static_cast<char>(R);
         cursor += std::strlen(suffix);
         return true;
     }
@@ -405,7 +407,7 @@ namespace speed_lib
         return "invalid format specifier for Length. Use 'm', 'km', 'mi', or 'ft', optionally followed by a number with an 'f' suffix (e.g., 'km8.2f').";
     }
 
-    template <typename Tag, auto Representation, auto DefaultRepresentation, NumericalType T, auto... ValidRepresentations>
+    template <typename Tag, auto Representation, NumericalType T, auto... ValidRepresentations>
     struct QuantityFormatter : std::formatter<T, char>
     {
         ParsedView parsed_format;
@@ -417,7 +419,7 @@ namespace speed_lib
 
             if (it == end or *it == '}')
             {
-                parsed_format = ParsedView{UnitTraits<Tag, DefaultRepresentation>::format_specifier, {}, {}};
+                parsed_format = ParsedView{};
                 return it;
             }
 
@@ -436,24 +438,39 @@ namespace speed_lib
         template <typename FormatContext>
         auto format(const Quantity<Tag, Representation, T> &quantity, FormatContext &ctx) const
         {
+            const auto unit = parsed_format.unit != nullptr
+                                  ? parsed_format.unit
+                                  : UnitTraits<Tag, Representation>::format_specifier;
+
+            T formatted_value = quantity.value;
+            if (parsed_format.representation.has_value())
+            {
+                const char target_representation = *parsed_format.representation;
+                [[maybe_unused]] bool matched_representation =
+                    ((target_representation == static_cast<char>(ValidRepresentations)
+                          ? (formatted_value = quantity.template convert<ValidRepresentations>().value, true)
+                          : false) ||
+                     ...);
+            }
+
             if (parsed_format.width and parsed_format.precision)
             {
-                std::format_to(ctx.out(), "{:>{}.{}f}", quantity.value, *parsed_format.width, *parsed_format.precision);
+                std::format_to(ctx.out(), "{:>{}.{}f}", static_cast<long double>(formatted_value), *parsed_format.width, *parsed_format.precision);
             }
             else if (parsed_format.width)
             {
-                std::format_to(ctx.out(), "{:>{}}", quantity.value, *parsed_format.width);
+                std::format_to(ctx.out(), "{:>{}}", formatted_value, *parsed_format.width);
             }
             else if (parsed_format.precision)
             {
-                std::format_to(ctx.out(), "{:.{}f}", quantity.value, *parsed_format.precision);
+                std::format_to(ctx.out(), "{:.{}f}", static_cast<long double>(formatted_value), *parsed_format.precision);
             }
             else
             {
-                std::format_to(ctx.out(), "{}", quantity.value);
+                std::format_to(ctx.out(), "{}", formatted_value);
             }
 
-            return std::format_to(ctx.out(), " {}", parsed_format.unit);
+            return std::format_to(ctx.out(), " {}", unit);
         }
     };
 }
@@ -463,7 +480,6 @@ struct std::formatter<speed_lib::Speed<r, T>>
     : speed_lib::QuantityFormatter<
           speed_lib::SpeedTag,
           r,
-          speed_lib::DefaultSpeedRepresentation,
           T,
           speed_lib::SPEED_REPRESENTATION::MS,
           speed_lib::SPEED_REPRESENTATION::KMH,
@@ -478,7 +494,6 @@ struct std::formatter<speed_lib::Time<r, T>>
     : speed_lib::QuantityFormatter<
           speed_lib::TimeTag,
           r,
-          speed_lib::DefaultTimeRepresentation,
           T,
           speed_lib::TIME_REPRESENTATION::S,
           speed_lib::TIME_REPRESENTATION::MIN,
@@ -491,7 +506,6 @@ struct std::formatter<speed_lib::Length<r, T>>
     : speed_lib::QuantityFormatter<
           speed_lib::LengthTag,
           r,
-          speed_lib::DefaultLengthRepresentation,
           T,
           speed_lib::LENGTH_REPRESENTATION::KM,
           speed_lib::LENGTH_REPRESENTATION::MI,

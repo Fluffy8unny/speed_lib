@@ -60,6 +60,26 @@ TEST(FormatterTests, PrecisionAndWidth)
     EXPECT_EQ(formatted, "     36.00 km/h");
 }
 
+TEST(FormatterTests, ConvertsWhenFormattingToDifferentSpeedUnit)
+{
+    auto s_kmh = 36.0_kmh;
+    EXPECT_EQ(std::format("{:ms}", s_kmh), "10 m/s");
+
+    auto s_ms = 10.0_ms;
+    EXPECT_EQ(std::format("{:kmh}", s_ms), "36 km/h");
+}
+
+TEST(FormatterTests, PrecisionWithIntegralRepresentationType)
+{
+    Speed<SPEED_REPRESENTATION::MS, int> s_ms{3};
+    EXPECT_EQ(std::format("{:ms.2f}", s_ms), "3.00 m/s");
+}
+
+TEST(FormatterTests, PrecisionWithIntegralRepresentationTypeAndUnitConversion)
+{
+    Speed<SPEED_REPRESENTATION::MS, int> s_ms{10};
+    EXPECT_EQ(std::format("{:kmh.1f}", s_ms), "36.0 km/h");
+}
 
 TEST(TimeFormatting, AllUnits)
 {
@@ -70,6 +90,15 @@ TEST(TimeFormatting, AllUnits)
     EXPECT_EQ(std::format("{:s}", t_s), "90 s");
     EXPECT_EQ(std::format("{:min}", t_min), "1.5 min");
     EXPECT_EQ(std::format("{:h}", t_h), "2 h");
+}
+
+TEST(TimeFormatting, ConvertsWhenFormattingToDifferentTimeUnit)
+{
+    auto t_s = 120.0_s;
+    EXPECT_EQ(std::format("{:min}", t_s), "2 min");
+
+    auto t_h = 2.0_h;
+    EXPECT_EQ(std::format("{:s}", t_h), "7200 s");
 }
 
 TEST(LengthFormatting, AllUnits)
@@ -83,4 +112,13 @@ TEST(LengthFormatting, AllUnits)
     EXPECT_EQ(std::format("{:km}", l_km), "1.5 km");
     EXPECT_EQ(std::format("{:mi}", l_mi), "2 mi");
     EXPECT_EQ(std::format("{:ft}", l_ft), "3 ft");
+}
+
+TEST(LengthFormatting, ConvertsWhenFormattingToDifferentLengthUnit)
+{
+    auto l_m = 1000.0_m;
+    EXPECT_EQ(std::format("{:km.0f}", l_m), "1 km");
+
+    auto l_mi = 1.0_mi;
+    EXPECT_EQ(std::format("{:ft}", l_mi), "5280 ft");
 }

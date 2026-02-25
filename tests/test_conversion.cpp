@@ -138,6 +138,34 @@ TEST(SpeedConversion, ValueTypeConversionOperatorUnsigned)
     EXPECT_EQ(value, 36U);
 }
 
+TEST(SpeedConversion, IntegralMsToKmhUsesFullScaleFactorBeforeCast)
+{
+    Speed<SPEED_REPRESENTATION::MS, int> s{10};
+    auto kmh = static_cast<Speed<SPEED_REPRESENTATION::KMH, int>>(s);
+    EXPECT_EQ(kmh.value, 36);
+}
+
+TEST(SpeedConversion, IntegralKmhToMsTruncatesAfterPreciseConversion)
+{
+    Speed<SPEED_REPRESENTATION::KMH, int> s{10};
+    auto ms = static_cast<Speed<SPEED_REPRESENTATION::MS, int>>(s);
+    EXPECT_EQ(ms.value, 2);
+}
+
+TEST(SpeedConversion, UnsignedMsToKmhUsesFullScaleFactorBeforeCast)
+{
+    Speed<SPEED_REPRESENTATION::MS, unsigned> s{10U};
+    auto kmh = static_cast<Speed<SPEED_REPRESENTATION::KMH, unsigned>>(s);
+    EXPECT_EQ(kmh.value, 36U);
+}
+
+TEST(SpeedConversion, NegativeIntegralMsToKmhUsesFullScaleFactorBeforeCast)
+{
+    Speed<SPEED_REPRESENTATION::MS, int> s{-10};
+    auto kmh = static_cast<Speed<SPEED_REPRESENTATION::KMH, int>>(s);
+    EXPECT_EQ(kmh.value, -36);
+}
+
 TEST(TimeConversion, SecondsToMinutesToHours)
 {
     auto s = 3600.0_s;

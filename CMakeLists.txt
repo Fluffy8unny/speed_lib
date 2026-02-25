@@ -9,6 +9,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(CTest)
 
+add_subdirectory(examples)
+
 if(BUILD_TESTING)
   add_subdirectory(tests)
 endif()
