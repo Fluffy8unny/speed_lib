@@ -146,6 +146,20 @@ namespace speed_lib
             const auto converted_quantity = convert<OUT>();
             return static_cast<Quantity<Tag, OUT, V>>(converted_quantity);
         }
+        
+        constexpr auto operator<=>(const Quantity &other) const
+        {
+            return value <=> other.value;
+        }
+
+        template <auto OTHER_U, typename V>
+            requires std::three_way_comparable_with<T, V>
+        constexpr auto operator<=>(const Quantity<Tag, OTHER_U, V> &other) const
+        {
+            const auto converted_other = other.template convert<U>();
+            using CommonType = std::common_type_t<T, V>;
+            return static_cast<CommonType>(value) <=> static_cast<CommonType>(converted_other.value);
+        }
 
         friend std::ostream &operator<<(std::ostream &os, const Quantity &q)
         {
@@ -165,27 +179,27 @@ namespace speed_lib
     template <SPEED_REPRESENTATION U>
     using SpeedLiteralMap = UnitTraits<SpeedTag, U>;
 
-#define DEFINE_LITERAL_OPERATOR_GENERIC(TagType, RepresentationType, unit, suffix)                            \
+#define DEFINE_LITERAL_OPERATOR(TagType, RepresentationType, unit, suffix)                            \
     constexpr Quantity<TagType, RepresentationType::unit, LiteralBase> operator""_##suffix(LiteralBase value) \
     {                                                                                                         \
         return Quantity<TagType, RepresentationType::unit, LiteralBase>{value};                               \
     }
 
-    DEFINE_LITERAL_OPERATOR_GENERIC(SpeedTag, SPEED_REPRESENTATION, MS, ms)
-    DEFINE_LITERAL_OPERATOR_GENERIC(SpeedTag, SPEED_REPRESENTATION, KMH, kmh)
-    DEFINE_LITERAL_OPERATOR_GENERIC(SpeedTag, SPEED_REPRESENTATION, MPH, mph)
-    DEFINE_LITERAL_OPERATOR_GENERIC(SpeedTag, SPEED_REPRESENTATION, KNT, knt)
-    DEFINE_LITERAL_OPERATOR_GENERIC(SpeedTag, SPEED_REPRESENTATION, C, c)
+    DEFINE_LITERAL_OPERATOR(SpeedTag, SPEED_REPRESENTATION, MS, ms)
+    DEFINE_LITERAL_OPERATOR(SpeedTag, SPEED_REPRESENTATION, KMH, kmh)
+    DEFINE_LITERAL_OPERATOR(SpeedTag, SPEED_REPRESENTATION, MPH, mph)
+    DEFINE_LITERAL_OPERATOR(SpeedTag, SPEED_REPRESENTATION, KNT, knt)
+    DEFINE_LITERAL_OPERATOR(SpeedTag, SPEED_REPRESENTATION, C, c)
 
-    DEFINE_LITERAL_OPERATOR_GENERIC(TimeTag, TIME_REPRESENTATION, S, s)
-    DEFINE_LITERAL_OPERATOR_GENERIC(TimeTag, TIME_REPRESENTATION, MIN, min)
-    DEFINE_LITERAL_OPERATOR_GENERIC(TimeTag, TIME_REPRESENTATION, H, h)
+    DEFINE_LITERAL_OPERATOR(TimeTag, TIME_REPRESENTATION, S, s)
+    DEFINE_LITERAL_OPERATOR(TimeTag, TIME_REPRESENTATION, MIN, min)
+    DEFINE_LITERAL_OPERATOR(TimeTag, TIME_REPRESENTATION, H, h)
 
-    DEFINE_LITERAL_OPERATOR_GENERIC(LengthTag, LENGTH_REPRESENTATION, M, m)
-    DEFINE_LITERAL_OPERATOR_GENERIC(LengthTag, LENGTH_REPRESENTATION, KM, km)
-    DEFINE_LITERAL_OPERATOR_GENERIC(LengthTag, LENGTH_REPRESENTATION, MI, mi)
-    DEFINE_LITERAL_OPERATOR_GENERIC(LengthTag, LENGTH_REPRESENTATION, FT, ft)
-#undef DEFINE_LITERAL_OPERATOR_GENERIC
+    DEFINE_LITERAL_OPERATOR(LengthTag, LENGTH_REPRESENTATION, M, m)
+    DEFINE_LITERAL_OPERATOR(LengthTag, LENGTH_REPRESENTATION, KM, km)
+    DEFINE_LITERAL_OPERATOR(LengthTag, LENGTH_REPRESENTATION, MI, mi)
+    DEFINE_LITERAL_OPERATOR(LengthTag, LENGTH_REPRESENTATION, FT, ft)
+#undef DEFINE_LITERAL_OPERATOR
 
     template <typename Op, typename Tag, auto A, NumericalType T>
         requires std::is_invocable_r_v<T, Op, T, T>
@@ -224,6 +238,22 @@ namespace speed_lib
     constexpr Quantity<Tag, A, T> operator*(const T a, const Quantity<Tag, A, T> &s)
     {
         return Quantity<Tag, A, T>{a * s.value};
+    }
+
+    template <SPEED_REPRESENTATION S, TIME_REPRESENTATION Ti, NumericalType T>
+    constexpr Quantity<LengthTag, LENGTH_REPRESENTATION::M, T> operator*(const Quantity<SpeedTag, S, T> &speed, const Quantity<TimeTag, Ti, T> &time)
+    {
+        const auto speed_ms = speed.template convert<SPEED_REPRESENTATION::MS>();
+        const auto time_s = time.template convert<TIME_REPRESENTATION::S>();
+        return Quantity<LengthTag, LENGTH_REPRESENTATION::M, T>{speed_ms.value * time_s.value};
+    }
+
+    template <LENGTH_REPRESENTATION L, TIME_REPRESENTATION Ti, NumericalType T>
+    constexpr Quantity<SpeedTag, SPEED_REPRESENTATION::MS, T> operator/(const Quantity<LengthTag, L, T> &length, const Quantity<TimeTag, Ti, T> &time)
+    {
+        const auto length_m = length.template convert<LENGTH_REPRESENTATION::M>();
+        const auto time_s = time.template convert<TIME_REPRESENTATION::S>();
+        return Quantity<SpeedTag, SPEED_REPRESENTATION::MS, T>{length_m.value / time_s.value};
     }
 
     template <typename Tag, auto A, NumericalType T>
