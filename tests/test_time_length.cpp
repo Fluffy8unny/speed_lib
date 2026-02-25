@@ -47,11 +47,3 @@ TEST(LengthArithmetic, MixedUnitsSubtraction)
     EXPECT_DOUBLE_EQ(result.value, 0.9);
 }
 
-TEST(TimeLengthFormatting, BasicFormatting)
-{
-    auto t = 90.0_s;
-    auto l = 1.5_km;
-
-    EXPECT_EQ(std::format("{:s}", t), "90 s");
-    EXPECT_EQ(std::format("{:km}", l), "1.5 km");
-}

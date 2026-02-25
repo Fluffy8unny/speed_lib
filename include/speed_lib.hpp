@@ -90,10 +90,10 @@ namespace speed_lib
         TIME_REPRESENTATION::H
 
 #define LENGTH_REPRESENTATION_TEMPLATE_LIST \
-    LENGTH_REPRESENTATION::M,               \
-        LENGTH_REPRESENTATION::KM,          \
+    LENGTH_REPRESENTATION::KM,              \
         LENGTH_REPRESENTATION::MI,          \
-        LENGTH_REPRESENTATION::FT
+        LENGTH_REPRESENTATION::FT,          \
+        LENGTH_REPRESENTATION::M
 
     constexpr SPEED_REPRESENTATION DefaultSpeedRepresentation = SPEED_REPRESENTATION::MS;
     constexpr TIME_REPRESENTATION DefaultTimeRepresentation = TIME_REPRESENTATION::S;
@@ -493,9 +493,9 @@ struct std::formatter<speed_lib::Length<r, T>>
           r,
           speed_lib::DefaultLengthRepresentation,
           T,
-          speed_lib::LENGTH_REPRESENTATION::M,
           speed_lib::LENGTH_REPRESENTATION::KM,
           speed_lib::LENGTH_REPRESENTATION::MI,
-          speed_lib::LENGTH_REPRESENTATION::FT>
+          speed_lib::LENGTH_REPRESENTATION::FT,
+          speed_lib::LENGTH_REPRESENTATION::M>
 {
 };
