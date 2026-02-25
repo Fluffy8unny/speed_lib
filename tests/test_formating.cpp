@@ -71,13 +71,13 @@ TEST(FormatterTests, ConvertsWhenFormattingToDifferentSpeedUnit)
 
 TEST(FormatterTests, PrecisionWithIntegralRepresentationType)
 {
-    Speed<SPEED_REPRESENTATION::MS, int> s_ms{3};
+    Speed<SPEED_UNIT::MS, int> s_ms{3};
     EXPECT_EQ(std::format("{:ms.2f}", s_ms), "3.00 m/s");
 }
 
 TEST(FormatterTests, PrecisionWithIntegralRepresentationTypeAndUnitConversion)
 {
-    Speed<SPEED_REPRESENTATION::MS, int> s_ms{10};
+    Speed<SPEED_UNIT::MS, int> s_ms{10};
     EXPECT_EQ(std::format("{:kmh.1f}", s_ms), "36.0 km/h");
 }
 

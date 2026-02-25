@@ -20,8 +20,8 @@ int main()
     auto time_str = 30.0_s;
     auto length_str = 100.0_m;
     std::println("Parsing time from '{:min}'", time_str);
-    std::println("Parsing length from '{:km}'", length_str);
     // Output: Parsing time from '0.5 min'
+    std::println("Parsing length from '{:km}'", length_str);
     // Output: Parsing length from '0.1 km'
 
     // Arithmetic operations with automatic unit conversions
@@ -47,17 +47,24 @@ int main()
         std::println("10 m/s is greater than or equal to 10 km/h");
     // Output: 10 m/s is greater than or equal to 10 km/h
 
+    // Wrong unit asignment doesn't compile!!!!!!!!!
+    // auto wrong = 10.0_s + 10.0_ms; // error: cannot convert 'Time<TIME_UNIT::S, long double>' to 'Speed<SPEED_UNIT::MS, long double>'
+    // auto wrong2 = 10.0_kmh * 10.0_km; // error: no match for 'operator*' (operand types are 'Speed<SPEED_UNIT::KMH, long double>' and 'Length<LENGTH_UNIT::KM, long double>')
+    auto ok = 10.0_kmh + 10.0_kmh; // works fine, same units
+    auto ok2 = 10.0_s + 10.0_min;  // works fine, different time units but same dimension
+    std::println("{} + {} = {}", 10.0_s, 10.0_min, ok2);
+
     // By not using literals, you can define the type the calculations are performed on
-    Time<TIME_REPRESENTATION::S, double> time3{30.0};
-    Length<LENGTH_REPRESENTATION::M, double> length3{100.0};
+    Time<TIME_UNIT::S, double> time3{30.0};
+    Length<LENGTH_UNIT::M, double> length3{100.0};
     auto speed4 = length3 / time3;
     std::println("Calculated speed with user-defined types: {}", speed4);
     // Output: Calculated speed with user-defined types: 3.33333 m/s
 
-    Time<TIME_REPRESENTATION::S, int> time5{10};
-    Length<LENGTH_REPRESENTATION::M, int> length5{35};
+    Time<TIME_UNIT::S, int> time5{10};
+    Length<LENGTH_UNIT::M, int> length5{35};
     auto speed5 = length5 / time5;
-    std::println("Calculated speed with user-defined types: {}", speed5);
+    std::println("Calculated speed with user-defined types...which is wrong and users fault: {}", speed5);
     // Output: Calculated speed with user-defined types: 3 m/s [truncated to int]
     return 0;
 }

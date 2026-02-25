@@ -23,3 +23,7 @@ add_executable(test_literals test_literals.cpp)
 target_include_directories(test_literals PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(test_literals PRIVATE GTest::gtest_main)  
 add_test(NAME literals_test COMMAND test_literals)
+
+add_executable(test_compile_time test_compile_time.cpp)
+target_include_directories(test_compile_time PRIVATE ${CMAKE_SOURCE_DIR}/include)
+add_test(NAME compile_time_test COMMAND test_compile_time)
