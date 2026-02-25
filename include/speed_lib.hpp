@@ -26,6 +26,9 @@ namespace speed_lib
     {
     };
 
+    template <typename Tag>
+    struct RepresentationForTag;
+
     enum class SPEED_REPRESENTATION : char
     {
         MS,
@@ -49,6 +52,30 @@ namespace speed_lib
         MI,
         FT
     };
+
+    template <>
+    struct RepresentationForTag<SpeedTag>
+    {
+        using type = SPEED_REPRESENTATION;
+    };
+
+    template <>
+    struct RepresentationForTag<TimeTag>
+    {
+        using type = TIME_REPRESENTATION;
+    };
+
+    template <>
+    struct RepresentationForTag<LengthTag>
+    {
+        using type = LENGTH_REPRESENTATION;
+    };
+
+    template <typename Tag>
+    using RepresentationForTag_t = typename RepresentationForTag<Tag>::type;
+
+    template <typename Tag, auto Unit>
+    concept TagRepresentationMatch = std::same_as<std::remove_cv_t<decltype(Unit)>, RepresentationForTag_t<Tag>>;
 
 #define SPEED_REPRESENTATION_TEMPLATE_LIST \
     SPEED_REPRESENTATION::MS,              \
@@ -110,7 +137,7 @@ namespace speed_lib
     };
 
     template <typename Tag, auto U, typename T>
-        requires NumericalType<T>
+        requires NumericalType<T> && TagRepresentationMatch<Tag, U>
     struct Quantity
     {
         T value;
