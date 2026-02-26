@@ -207,38 +207,38 @@ TEST(ArithmeticTest, ArrayAddition)
 
 TEST(ArithmeticTests, SpeedTimeMultiplicationProducesLength)
 {
-    const Quantity<SpeedTag, SPEED_UNIT::MS, long double> speed{10.0L};
-    const Quantity<TimeTag, TIME_UNIT::S, long double> time{5.0L};
+    const Speed<SPEED_UNIT::MS, long double> speed{10.0L};
+    const Time<TIME_UNIT::S, long double> time{5.0L};
 
-    const Quantity<LengthTag, LENGTH_UNIT::M, long double> result = speed * time;
+    const Length<LENGTH_UNIT::M, long double> result = speed * time;
 
-    static_assert(std::is_same_v<decltype(speed * time), Quantity<LengthTag, LENGTH_UNIT::M, long double>>);
-    EXPECT_TRUE((std::is_same_v<std::remove_cvref_t<decltype(result)>, Quantity<LengthTag, LENGTH_UNIT::M, long double>>));
+    static_assert(std::is_same_v<decltype(speed * time), Length<LENGTH_UNIT::M, long double>>);
+    EXPECT_TRUE((std::is_same_v<std::remove_cvref_t<decltype(result)>, Length<LENGTH_UNIT::M, long double>>));
     EXPECT_DOUBLE_EQ(result.value, 50.0L);
 }
 
 TEST(ArithmeticTests, LengthTimeDivisionProducesSpeed)
 {
-    const Quantity<LengthTag, LENGTH_UNIT::M, long double> length{120.0L};
-    const Quantity<TimeTag, TIME_UNIT::S, long double> time{10.0L};
+    const Length<LENGTH_UNIT::M, long double> length{120.0L};
+    const Time<TIME_UNIT::S, long double> time{10.0L};
 
-    const Quantity<SpeedTag, SPEED_UNIT::MS, long double> result = length / time;
+    const Speed<SPEED_UNIT::MS, long double> result = length / time;
 
-    static_assert(std::is_same_v<decltype(length / time), Quantity<SpeedTag, SPEED_UNIT::MS, long double>>);
-    EXPECT_TRUE((std::is_same_v<std::remove_cvref_t<decltype(result)>, Quantity<SpeedTag, SPEED_UNIT::MS, long double>>));
+    static_assert(std::is_same_v<decltype(length / time), Speed<SPEED_UNIT::MS, long double>>);
+    EXPECT_TRUE((std::is_same_v<std::remove_cvref_t<decltype(result)>, Speed<SPEED_UNIT::MS, long double>>));
     EXPECT_DOUBLE_EQ(result.value, 12.0L);
 }
 
 TEST(ArithmeticTests, LengthTimeDivisionAndSpeedTimeMultiplicationRoundTrip)
 {
-    const Quantity<LengthTag, LENGTH_UNIT::KM, long double> original_length{1.2L};
-    const Quantity<TimeTag, TIME_UNIT::MIN, long double> time{2.0L};
+    const Length<LENGTH_UNIT::KM, long double> original_length{1.2L};
+    const Time<TIME_UNIT::MIN, long double> time{2.0L};
 
-    const Quantity<SpeedTag, SPEED_UNIT::MS, long double> speed = original_length / time;
-    const Quantity<LengthTag, LENGTH_UNIT::M, long double> reconstructed_length = speed * time;
+    const Speed<SPEED_UNIT::MS, long double> speed = original_length / time;
+    const Length<LENGTH_UNIT::M, long double> reconstructed_length = speed * time;
 
-    static_assert(std::is_same_v<decltype(original_length / time), Quantity<SpeedTag, SPEED_UNIT::MS, long double>>);
-    static_assert(std::is_same_v<decltype(speed * time), Quantity<LengthTag, LENGTH_UNIT::M, long double>>);
+    static_assert(std::is_same_v<decltype(original_length / time), Speed<SPEED_UNIT::MS, long double>>);
+    static_assert(std::is_same_v<decltype(speed * time), Length<LENGTH_UNIT::M, long double>>);
 
     EXPECT_DOUBLE_EQ(speed.value, 10.0L);
     EXPECT_DOUBLE_EQ(reconstructed_length.value, 1200.0L);
@@ -249,9 +249,9 @@ TEST(ArithmeticTests, SpeedTimeMultiplicationMixedUnits)
     const Speed<SPEED_UNIT::KMH, long double> speed{36.0L};
     const Time<TIME_UNIT::H, long double> time{1.0L};
 
-    const Quantity<LengthTag, LENGTH_UNIT::M, long double> result = speed * time;
+    const Length<LENGTH_UNIT::M, long double> result = speed * time;
 
-    static_assert(std::is_same_v<decltype(speed * time), Quantity<LengthTag, LENGTH_UNIT::M, long double>>);
+    static_assert(std::is_same_v<decltype(speed * time), Length<LENGTH_UNIT::M, long double>>);
     EXPECT_DOUBLE_EQ(result.value, 36000.0L);
 }
 
