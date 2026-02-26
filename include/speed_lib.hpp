@@ -1,3 +1,5 @@
+#pragma once
+
 #include <algorithm>
 #include <charconv>
 #include <concepts>
@@ -17,31 +19,36 @@ namespace speed_lib
 
     template <typename DimensionTag>
     struct UnitForTag;
+    /// Define dimension tags and their corresponding unit enums.
+    /// Each dimension is a unit of measurement.
 
+    /// @brief Units that represent speed. The base unit is meter per second (MS).
     enum class SPEED_UNIT : char
     {
-        MS,
-        KMH,
-        MPH,
-        KNT,
-        C
+        MS,  ///< Meter per second (base unit).
+        KMH, ///< Kilometer per hour.
+        MPH, ///< Mile per hour.
+        KNT, ///< Knot.
+        C    ///< Speed of light.
     };
 
+    /// @brief Units that represent time. The base unit is second (S).
     enum class TIME_UNIT : char
     {
-        S,
-        MIN,
-        H
+        S,   ///< Second (base unit).
+        MIN, ///< Minute.
+        H    ///< Hour.
     };
 
+    /// @brief Units that represent length. The base unit is meter (M).
     enum class LENGTH_UNIT : char
     {
-        M,
-        KM,
-        MI,
-        FT
+        M,  ///< Meter (base unit).
+        KM, ///< Kilometer.
+        MI, ///< Mile.
+        FT  ///< Foot.
     };
-
+// This creates a type trait, that can be used to map from a dimension tag to its corresponding unit enum. For example, UnitForTag<SpeedTag>::type will be SPEED_UNIT.
 #define DEFINE_TAG_WITH_UNIT(_tag, _unit) \
     struct _tag                           \
     {                                     \
@@ -57,13 +64,15 @@ namespace speed_lib
     DEFINE_TAG_WITH_UNIT(LengthTag, LENGTH_UNIT)
 
 #undef DEFINE_TAG_WITH_UNIT
-
+    // DimensionTag contains the dimension (e.g., Speed, Time, Length)
     template <typename DimensionTag>
     using UnitForTag_t = typename UnitForTag<DimensionTag>::type;
 
     template <typename DimensionTag, auto Unit>
     struct UnitTraits;
 
+    // Here the actual conversion between units inside of a dimension is defined.
+    // these are all defined in relation to a base unit
 #define DEFINE_UNIT_TRAITS(_tag, _unit, scale, _suffix, _format_specifier, _dimension_name) \
     template <>                                                                             \
     struct UnitTraits<_tag, _unit>                                                          \
@@ -73,63 +82,93 @@ namespace speed_lib
         static constexpr const char *format_specifier = _format_specifier;                  \
         static constexpr const char *dimension_name = _dimension_name;                      \
     };
-
+    // base unit is m/s
     DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::MS, 1.0L, "ms", "m/s", "Speed")
     DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::KMH, 1000000.0L / 3600000.0L, "kmh", "km/h", "Speed")
     DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::MPH, 1609344.0L / 3600000.0L, "mph", "mi/h", "Speed")
     DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::KNT, 1852000.0L / 3600000.0L, "knt", "knt", "Speed")
     DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::C, 299792458.0L, "c", "c", "Speed")
-
+    // base unit is s
     DEFINE_UNIT_TRAITS(TimeTag, TIME_UNIT::S, 1.0L, "s", "s", "Time")
     DEFINE_UNIT_TRAITS(TimeTag, TIME_UNIT::MIN, 60.0L, "min", "min", "Time")
     DEFINE_UNIT_TRAITS(TimeTag, TIME_UNIT::H, 3600.0L, "h", "h", "Time")
-
+    // base unit is m
     DEFINE_UNIT_TRAITS(LengthTag, LENGTH_UNIT::M, 1.0L, "m", "m", "Length")
     DEFINE_UNIT_TRAITS(LengthTag, LENGTH_UNIT::KM, 1000.0L, "km", "km", "Length")
     DEFINE_UNIT_TRAITS(LengthTag, LENGTH_UNIT::MI, 1609.344L, "mi", "mi", "Length")
     DEFINE_UNIT_TRAITS(LengthTag, LENGTH_UNIT::FT, 0.3048L, "ft", "ft", "Length")
 
 #undef DEFINE_UNIT_TRAITS
-
+    // here the actual conversion between units inside of a dimension is defined
+    // the factor is calculated by converting from the source unit to the base unit, then from the base unit to the target unit
     template <typename DimensionTag, UnitForTag_t<DimensionTag> UnitFrom, UnitForTag_t<DimensionTag> UnitTo, NumericalType ValueType>
     struct ConversionMap
     {
-        using conversion_type = std::common_type_t<long double, ValueType>;
+        using conversion_type = std::common_type_t<long double, ValueType>; // make sure the accuracy of the conversion is at least the max accuracy of the types involved
         static constexpr conversion_type value{UnitTraits<DimensionTag, UnitFrom>::scale_to_base / UnitTraits<DimensionTag, UnitTo>::scale_to_base};
     };
 
+    /**
+     * @brief Quantity struct represents a physical quantity with a specific dimension (e.g., speed, time, length), unit, and underlying value type.
+     * Arithmetic operations and comparisons between quantities of the same dimension are supported, even if they are in different units of the same dimension
+     */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> Unit, typename ValueType>
         requires NumericalType<ValueType>
     struct Quantity
     {
         ValueType value;
-
+        /**
+         * @brief Converts the quantity to a different unit of the same dimension.
+         * @param TargetUnit the unit to convert to, needs to be in the same dimension as the current unit
+         * @returns A new Quantity object with the same dimension and value type, but in the target unit
+         */
         template <UnitForTag_t<DimensionTag> TargetUnit>
         constexpr Quantity<DimensionTag, TargetUnit, ValueType> convert() const
         {
-            using ConversionType = typename ConversionMap<DimensionTag, Unit, TargetUnit, ValueType>::conversion_type;
+            using ConversionType = typename ConversionMap<DimensionTag, Unit, TargetUnit, ValueType>::conversion_type; // make sure the accuracy of the conversion is at least the max accuracy of the types involved.
             const auto converted_value = static_cast<ConversionType>(value) * ConversionMap<DimensionTag, Unit, TargetUnit, ValueType>::value;
             return Quantity<DimensionTag, TargetUnit, ValueType>{static_cast<ValueType>(converted_value)};
         }
 
+        /**
+         * @brief Casting from unit of the same dimension to another implicitly
+         * @param TargetUnit the unit to convert to needs to be in the same dimension as the current unit
+         * @returns A new Quantity object with the same dimension and value type, but in the target unit
+         */
         template <UnitForTag_t<DimensionTag> TargetUnit>
         constexpr operator Quantity<DimensionTag, TargetUnit, ValueType>() const
         {
             return convert<TargetUnit>();
         }
 
+        /**
+         * @brief Extracts the raw value of the quantity.
+         * @returns The underlying value of the quantity.
+         */
         constexpr operator ValueType() const
         {
             return value;
         }
 
+        /**
+         * @brief Casting to the same unit, but with another underlying value type.
+         * @tparam TargetValueType The target value type to cast to.
+         * @returns A new Quantity object with the same dimension and unit, but with the target value type.
+         * @note e.g. int x = 1_m; double y=x; y now has the value 1.0, and is of type Quantity<LengthTag, LENGTH_UNIT::M, double>
+         */
         template <typename TargetValueType>
-            requires std::is_convertible_v<ValueType, TargetValueType>
+            requires std::is_convertible_v<ValueType, TargetValueType> // god I love concepts
         constexpr operator Quantity<DimensionTag, Unit, TargetValueType>() const
         {
             return Quantity<DimensionTag, Unit, TargetValueType>{static_cast<TargetValueType>(value)};
         }
 
+        /**
+         * @brief Casting to a different unit and value type simultaneously.
+         * @tparam TargetUnit The target unit to convert to, needs to be in the same dimension as the current unit.
+         * @tparam TargetValueType The target value type to cast to.
+         * @returns A new Quantity object with the same dimension, but in the target unit and value type.
+         */
         template <UnitForTag_t<DimensionTag> TargetUnit, typename TargetValueType>
             requires std::is_convertible_v<ValueType, TargetValueType>
         constexpr operator Quantity<DimensionTag, TargetUnit, TargetValueType>() const
@@ -138,11 +177,13 @@ namespace speed_lib
             return static_cast<Quantity<DimensionTag, TargetUnit, TargetValueType>>(converted_quantity);
         }
 
+        // units can be compared with each other, as long as they are of the same dimension...
         constexpr auto operator<=>(const Quantity &other) const
         {
             return value <=> other.value;
         }
 
+        // even if they are not in the same unit
         template <UnitForTag_t<DimensionTag> OtherUnit, typename OtherValueType>
             requires std::three_way_comparable_with<ValueType, OtherValueType>
         constexpr auto operator<=>(const Quantity<DimensionTag, OtherUnit, OtherValueType> &other) const
@@ -152,6 +193,7 @@ namespace speed_lib
             return static_cast<CommonType>(value) <=> static_cast<CommonType>(converted_other.value);
         }
 
+        // someone is gonna complain if I don't do it
         friend std::ostream &operator<<(std::ostream &os, const Quantity &q)
         {
             return os << q.value << ' ' << UnitTraits<DimensionTag, Unit>::format_specifier;
