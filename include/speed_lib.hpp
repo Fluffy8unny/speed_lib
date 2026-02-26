@@ -75,9 +75,9 @@ namespace speed_lib
     };
 
     DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::MS, 1.0L, "ms", "m/s", "Speed")
-    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::KMH, 1000.0L / 3600.0L, "kmh", "km/h", "Speed")
-    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::MPH, 1609.344L / 3600.0L, "mph", "mi/h", "Speed")
-    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::KNT, 1852.0L / 3600.0L, "knt", "knt", "Speed")
+    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::KMH, 1000000.0L / 3600000.0L, "kmh", "km/h", "Speed")
+    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::MPH, 1609344.0L / 3600000.0L, "mph", "mi/h", "Speed")
+    DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::KNT, 1852000.0L / 3600000.0L, "knt", "knt", "Speed")
     DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::C, 299792458.0L, "c", "c", "Speed")
 
     DEFINE_UNIT_TRAITS(TimeTag, TIME_UNIT::S, 1.0L, "s", "s", "Time")
@@ -243,6 +243,14 @@ namespace speed_lib
     {
         return Quantity<DimensionTag, LeftUnit, T>{-q.value};
     }
+    template <typename DimensionA,
+              UnitForTag_t<DimensionA> LeftUnit,
+              NumericalType TA,
+              typename DimensionB,
+              UnitForTag_t<DimensionB> RightUnit,
+              NumericalType TB>
+        requires(!std::same_as<DimensionA, DimensionB>)
+    constexpr void operator*(const Quantity<DimensionA, LeftUnit, TA> &, const Quantity<DimensionB, RightUnit, TB> &) = delete;
 
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, NumericalType T, NumericalType Scalar>
     constexpr Quantity<DimensionTag, LeftUnit, std::common_type_t<T, Scalar>> operator*(const Quantity<DimensionTag, LeftUnit, T> &s, const Scalar a)
@@ -257,6 +265,14 @@ namespace speed_lib
         using ResultType = std::common_type_t<T, Scalar>;
         return Quantity<DimensionTag, LeftUnit, ResultType>{static_cast<ResultType>(a) * static_cast<ResultType>(s.value)};
     }
+    template <typename DimensionA,
+              UnitForTag_t<DimensionA> LeftUnit,
+              NumericalType TA,
+              typename DimensionB,
+              UnitForTag_t<DimensionB> RightUnit,
+              NumericalType TB>
+        requires(!std::same_as<DimensionA, DimensionB>)
+    constexpr void operator/(const Quantity<DimensionA, LeftUnit, TA> &, const Quantity<DimensionB, RightUnit, TB> &) = delete;
 
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, NumericalType T, NumericalType Scalar>
     constexpr Quantity<DimensionTag, LeftUnit, std::common_type_t<T, Scalar>> operator/(const Quantity<DimensionTag, LeftUnit, T> &s, const Scalar &a)
