@@ -272,6 +272,18 @@ namespace speed_lib
                                       const Quantity<DimensionTag, RightUnit, RightValueType> &) = delete;
 
     // Intra dimension operations. These are defined for all combinations of units within the same dimension, and the result is in the left-hand-side unit.
+    /**
+     * @brief Applies a binary operation to two Quantities of the same dimension and unit.
+     * @tparam Op Binary operation type (e.g. std::plus<long double>).
+     * @tparam DimensionTag Dimension category (e.g. LengthTag).
+     * @tparam LeftUnit Unit for both Quantities (e.g. LENGTH_UNIT::M).
+     * @tparam ValueType Numeric value type (e.g. long double).
+     * @param[in] lhs Left-hand-side Quantity.
+     * @param[in] rhs Right-hand-side Quantity.
+     * @param[in] op Binary operation applied to the Quantity values.
+     * @return Quantity with the left unit and same value type.
+     * @example auto s = speed_lib::apply_binary_op(10_m, 500_m, std::plus<long double>{});
+     */
     template <typename Op, typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, NumericalType ValueType>
         requires std::is_invocable_r_v<ValueType, Op, ValueType, ValueType>
     constexpr Quantity<DimensionTag, LeftUnit, ValueType> apply_binary_op(const Quantity<DimensionTag, LeftUnit, ValueType> &lhs, const Quantity<DimensionTag, LeftUnit, ValueType> &rhs, Op op)
