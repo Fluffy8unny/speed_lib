@@ -19,8 +19,10 @@ namespace speed_lib
 
     template <typename DimensionTag>
     struct UnitForTag;
-    /// Define dimension tags and their corresponding unit enums.
-    /// Each dimension is a unit of measurement.
+    /**
+     * Define dimension tags and their corresponding unit enums.
+     * Each dimension is a unit of measurement.
+     */
 
     /// @brief Units that represent speed. The base unit is meter per second (MS).
     enum class SPEED_UNIT : char
@@ -109,8 +111,8 @@ namespace speed_lib
     };
 
     /**
-     * @brief Quantity struct represents a physical quantity with a specific dimension (e.g., speed, time, length), unit, and underlying value type.
-     * Arithmetic operations and comparisons between quantities of the same dimension are supported, even if they are in different units of the same dimension
+     * @brief Quantity struct represents a physical Quantity with a specific dimension (e.g., speed, time, length), unit, and underlying value type.
+     * Arithmetic operations and comparisons between Quantities of the same dimension are supported, even if they are in different units of the same dimension
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> Unit, typename ValueType>
         requires NumericalType<ValueType>
@@ -118,8 +120,8 @@ namespace speed_lib
     {
         ValueType value;
         /**
-         * @brief Converts the quantity to a different unit of the same dimension.
-         * @param TargetUnit the unit to convert to, needs to be in the same dimension as the current unit
+         * @brief Converts the Quantity to a different unit of the same dimension.
+         * @param[in] TargetUnit the unit to convert to, needs to be in the same dimension as the current unit
          * @returns A new Quantity object with the same dimension and value type, but in the target unit
          */
         template <UnitForTag_t<DimensionTag> TargetUnit>
@@ -132,7 +134,7 @@ namespace speed_lib
 
         /**
          * @brief Casting from unit of the same dimension to another implicitly
-         * @param TargetUnit the unit to convert to needs to be in the same dimension as the current unit
+         * @param[in] TargetUnit the unit to convert to needs to be in the same dimension as the current unit
          * @returns A new Quantity object with the same dimension and value type, but in the target unit
          */
         template <UnitForTag_t<DimensionTag> TargetUnit>
@@ -142,8 +144,8 @@ namespace speed_lib
         }
 
         /**
-         * @brief Extracts the raw value of the quantity.
-         * @returns The underlying value of the quantity.
+         * @brief Extracts the raw value of the Quantity.
+         * @returns The underlying value of the Quantity.
          */
         constexpr operator ValueType() const
         {
@@ -251,7 +253,7 @@ namespace speed_lib
     constexpr void operator _operator(const Quantity<LeftDimensionTag, LeftUnit, LeftValueType> &, \
                                       const Quantity<RightDimensionTag, RightUnit, RightValueType> &) = delete;
 
-///@brief we have no way atm to handle powers of units
+///@brief We have no way at the moment to handle powers of units.
 #define DEFINE_SAME_DIMENSION_OPERATOR_DELETE(_operator)                                       \
     template <typename DimensionTag,                                                           \
               UnitForTag_t<DimensionTag> LeftUnit,                                             \
@@ -269,8 +271,13 @@ namespace speed_lib
         return Quantity<DimensionTag, LeftUnit, ValueType>{op(lhs.value, rhs.value)};
     }
 
-    /// @brief Applies a binary operation after converting the RHS quantity to the LHS unit.
-    /// @return Quantity with the left unit and same value type.
+    /**
+     * @brief Applies a binary operation after converting the RHS Quantity to the LHS unit.
+     * @param[in] lhs Left-hand-side Quantity that determines output unit.
+     * @param[in] rhs Right-hand-side Quantity, converted to the left unit before applying the operation.
+     * @param[in] op Binary operation applied to the Quantity values.
+     * @return Quantity with the left unit and same value type.
+     */
     template <typename Op, typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, UnitForTag_t<DimensionTag> RightUnit, NumericalType ValueType>
         requires std::is_invocable_r_v<ValueType, Op, ValueType, ValueType>
     constexpr Quantity<DimensionTag, LeftUnit, ValueType> apply_binary_op(const Quantity<DimensionTag, LeftUnit, ValueType> &lhs, const Quantity<DimensionTag, RightUnit, ValueType> &rhs, Op op)
@@ -279,8 +286,12 @@ namespace speed_lib
         return Quantity<DimensionTag, LeftUnit, ValueType>{op(lhs.value, rhs_converted.value)};
     }
 
-    /// @brief Adds two quantities of the same dimension.
-    /// @return Sum in the left-hand-side unit.
+    /**
+     * @brief Adds two Quantities of the same dimension.
+     * @param[in] a Left-hand-side Quantity.
+     * @param[in] b Right-hand-side Quantity.
+     * @return Sum in the left-hand-side unit.
+     */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, UnitForTag_t<DimensionTag> RightUnit, NumericalType ValueType>
     constexpr Quantity<DimensionTag, LeftUnit, ValueType> operator+(const Quantity<DimensionTag, LeftUnit, ValueType> &a, const Quantity<DimensionTag, RightUnit, ValueType> &b)
     {
@@ -289,8 +300,12 @@ namespace speed_lib
 
     DEFINE_MIXED_DIMENSION_OPERATOR_DELETE(+)
 
-    /// @brief Subtracts two quantities of the same dimension.
-    /// @return Difference in the left-hand-side unit.
+    /**
+     * @brief Subtracts two Quantities of the same dimension.
+     * @param[in] a Left-hand-side Quantity.
+     * @param[in] b Right-hand-side Quantity.
+     * @return Difference in the left-hand-side unit.
+     */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, UnitForTag_t<DimensionTag> RightUnit, NumericalType ValueType>
     constexpr Quantity<DimensionTag, LeftUnit, ValueType> operator-(const Quantity<DimensionTag, LeftUnit, ValueType> &a, const Quantity<DimensionTag, RightUnit, ValueType> &b)
     {
@@ -299,8 +314,11 @@ namespace speed_lib
 
     DEFINE_MIXED_DIMENSION_OPERATOR_DELETE(-)
 
-    /// @brief Unary negation for a quantity.
-    /// @return Quantity with negated value in the same unit.
+    /**
+     * @brief Unary negation for a Quantity.
+     * @param[in] q Quantity to negate.
+     * @return Quantity with negated value in the same unit.
+     */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, NumericalType ValueType>
     constexpr Quantity<DimensionTag, LeftUnit, ValueType> operator-(const Quantity<DimensionTag, LeftUnit, ValueType> &q)
     {
@@ -309,8 +327,12 @@ namespace speed_lib
     DEFINE_SAME_DIMENSION_OPERATOR_DELETE(*)
     DEFINE_MIXED_DIMENSION_OPERATOR_DELETE(*)
 
-    /// @brief Multiplies a quantity by a scalar.
-    /// @return Quantity in the same unit with common promoted value type.
+    /**
+     * @brief Multiplies a Quantity by a scalar.
+     * @param[in] s Quantity operand.
+     * @param[in] a Scalar multiplier.
+     * @return Quantity in the same unit with common promoted value type.
+     */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, NumericalType ValueType, NumericalType Scalar>
     constexpr Quantity<DimensionTag, LeftUnit, std::common_type_t<ValueType, Scalar>> operator*(const Quantity<DimensionTag, LeftUnit, ValueType> &s, const Scalar a)
     {
@@ -318,8 +340,12 @@ namespace speed_lib
         return Quantity<DimensionTag, LeftUnit, ResultType>{static_cast<ResultType>(s.value) * static_cast<ResultType>(a)};
     }
 
-    /// @brief Multiplies a scalar by a quantity.
-    /// @return Quantity in the same unit with common promoted value type.
+    /**
+     * @brief Multiplies a scalar by a Quantity.
+     * @param[in] a Scalar multiplier.
+     * @param[in] s Quantity operand.
+     * @return Quantity in the same unit with common promoted value type.
+     */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, NumericalType ValueType, NumericalType Scalar>
     constexpr Quantity<DimensionTag, LeftUnit, std::common_type_t<ValueType, Scalar>> operator*(const Scalar a, const Quantity<DimensionTag, LeftUnit, ValueType> &s)
     {
@@ -328,8 +354,12 @@ namespace speed_lib
     }
     DEFINE_MIXED_DIMENSION_OPERATOR_DELETE(/)
 
-    /// @brief Divides a quantity by a scalar.
-    /// @return Quantity in the same unit with common promoted value type.
+    /**
+     * @brief Divides a Quantity by a scalar.
+     * @param[in] s Quantity operand.
+     * @param[in] a Scalar divisor.
+     * @return Quantity in the same unit with common promoted value type.
+     */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, NumericalType ValueType, NumericalType Scalar>
     constexpr Quantity<DimensionTag, LeftUnit, std::common_type_t<ValueType, Scalar>> operator/(const Quantity<DimensionTag, LeftUnit, ValueType> &s, const Scalar &a)
     {
@@ -341,8 +371,12 @@ namespace speed_lib
 #undef DEFINE_SAME_DIMENSION_OPERATOR_DELETE
     // Inter dimension operations. These are only defined for certain combinations of dimensions, and the result is always in the base unit of the resulting dimension.
 
-    /// @brief Divides two quantities with the same dimension and unit.
-    /// @return Unitless ratio.
+    /**
+     * @brief Divides two Quantities with the same dimension and unit.
+     * @param[in] a Numerator Quantity.
+     * @param[in] b Denominator Quantity.
+     * @return Unitless ratio.
+     */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> Unit, NumericalType LeftValueType, NumericalType RightValueType>
     constexpr std::common_type_t<LeftValueType, RightValueType> operator/(const Quantity<DimensionTag, Unit, LeftValueType> &a, const Quantity<DimensionTag, Unit, RightValueType> &b)
     {
@@ -350,9 +384,13 @@ namespace speed_lib
         return static_cast<ResultType>(a.value) / static_cast<ResultType>(b.value);
     }
 
-    /// @brief Divides two quantities of the same dimension but possibly different units.
-    /// @details The RHS quantity is converted to the LHS unit before division.
-    /// @return Unitless ratio
+    /**
+     * @brief Divides two Quantities of the same dimension but possibly different units.
+     * @details The RHS Quantity is converted to the LHS unit before division.
+     * @param[in] a Numerator Quantity.
+     * @param[in] b Denominator Quantity.
+     * @return Unitless ratio
+     */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, UnitForTag_t<DimensionTag> RightUnit, NumericalType LeftValueType, NumericalType RightValueType>
     constexpr std::common_type_t<LeftValueType, RightValueType> operator/(const Quantity<DimensionTag, LeftUnit, LeftValueType> &a, const Quantity<DimensionTag, RightUnit, RightValueType> &b)
     {
@@ -361,8 +399,12 @@ namespace speed_lib
         return static_cast<ResultType>(a.value) / static_cast<ResultType>(converted_b.value);
     }
 
-    /// @brief Computes length from speed multiplied by time.
-    /// @return Length in meters.
+    /**
+     * @brief Computes length from speed multiplied by time.
+     * @param[in] speed Speed Quantity.
+     * @param[in] time Time Quantity.
+     * @return Length in meters.
+     */
     template <SPEED_UNIT SpeedUnit, TIME_UNIT TimeUnit, NumericalType ValueType>
     constexpr Length<LENGTH_UNIT::M, ValueType> operator*(const Speed<SpeedUnit, ValueType> &speed, const Time<TimeUnit, ValueType> &time)
     {
@@ -371,8 +413,12 @@ namespace speed_lib
         return Length<LENGTH_UNIT::M, ValueType>{speed_ms.value * time_s.value};
     }
 
-    /// @brief Computes speed from length divided by time.
-    /// @return Speed in meters per second.
+    /**
+     * @brief Computes speed from length divided by time.
+     * @param[in] length Length Quantity.
+     * @param[in] time Time Quantity.
+     * @return Speed in meters per second.
+     */
     template <LENGTH_UNIT LengthUnit, TIME_UNIT TimeUnit, NumericalType ValueType>
     constexpr Speed<SPEED_UNIT::MS, ValueType> operator/(const Length<LengthUnit, ValueType> &length, const Time<TimeUnit, ValueType> &time)
     {
@@ -390,6 +436,14 @@ namespace speed_lib
         std::optional<unsigned> precision = std::nullopt;
     };
 
+    /**
+     * @brief Parses an unsigned integer from a string view starting at a given cursor position.
+     * If parsing is successful, the cursor is advanced past the parsed number.
+     *
+     * @param[in] s The string view to parse from.
+     * @param[in,out] cursor The current position in the string view. This will be updated to point behind the number if parsing is successful.
+     * @return An optional containing the parsed unsigned integer if parsing was successful, or std::nullopt
+     */
     constexpr std::optional<unsigned> parse_unsigned_at(std::string_view s, std::size_t &cursor)
     {
         if (cursor >= s.size())
@@ -456,14 +510,17 @@ namespace speed_lib
             if (!consume_character('f'))
                 return std::nullopt;
         }
-        // ther is junk at the end, this is invalid
+        // there is junk at the end, this is invalid
         if (cursor != s.size())
             return std::nullopt;
 
         return result;
     }
 
-    // I'm willing to admit that using a varidic template here to generate an error message was just done for style poiints and is not strictly necessary
+    // I'm willing to admit that using a variadic template here to generate an error message was just done for style points and is not strictly necessary
+    /**
+     * @brief Builds an error message for invalid format specifiers, listing the valid units for the given dimension.
+     */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> FirstUnit, UnitForTag_t<DimensionTag>... RemainingUnits>
     std::string build_formatter_error_message()
     {
@@ -483,16 +540,19 @@ namespace speed_lib
             UnitTraits<DimensionTag, FirstUnit>::suffix);
     }
     /**
-     * @brief Formatter for quantities. Prints the value followed by the unit.
-     * Also parses the format string (:UNITWIDTH.PRECESSIONf e.g. km10.4f) to allow for optional unit conversion and formatting options.
-     * @note For example, "{:kmh8.2f}" would print the quantity in km/h with a width of 8 and a precision of 2.
+     * @brief Formatter for Quantities. Prints the value followed by the unit.
+     * Also parses the format string (:UNITWIDTH.PRECISIONf e.g. km10.4f) to allow for optional unit conversion and formatting options.
+     * @note For example, "{:kmh8.2f}" would print the Quantity in km/h with a width of 8 and a precision of 2.
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> Unit, NumericalType ValueType, UnitForTag_t<DimensionTag>... ValidUnits>
     struct QuantityFormatter : std::formatter<ValueType, char>
     {
         ParsedView<DimensionTag> parsed_format;
         /**
-         * @brief Converts the quantity to the target unit if the target unit matches the candidate unit e.g. m->km
+         * @brief Converts the Quantity to the target unit if the target unit matches the candidate unit e.g. m->km
+         * @param[in] target_unit Requested target unit.
+         * @param[in] quantity Source Quantity.
+         * @param[out] formatted_value Converted numeric value in the matched candidate unit.
          */
         template <UnitForTag_t<DimensionTag> CandidateUnit, UnitForTag_t<DimensionTag>... RemainingUnits>
         static constexpr void convert_if_unit_matches(
@@ -510,7 +570,8 @@ namespace speed_lib
                 convert_if_unit_matches<RemainingUnits...>(target_unit, quantity, formatted_value);
         }
         /**
-         * @brief Parses the format specifier for the quantity.
+         * @brief Parses the format specifier for the Quantity.
+         * @param[in,out] ctx Format parse context consumed by the formatter.
          */
         constexpr auto parse(std::format_parse_context &ctx)
         {
@@ -535,7 +596,9 @@ namespace speed_lib
             return it;
         }
         /**
-         * @brief Formats the quantity according to the parsed format specifier.
+         * @brief Formats the Quantity according to the parsed format specifier.
+         * @param[in] quantity Quantity to format.
+         * @param[in,out] ctx Output format context receiving formatted text.
          */
         template <typename FormatContext>
         auto format(const Quantity<DimensionTag, Unit, ValueType> &quantity, FormatContext &ctx) const
@@ -573,7 +636,7 @@ namespace speed_lib
     };
 }
 
-/// @brief Formater specialization for Speed
+/// @brief Formatter specialization for Speed
 template <speed_lib::SPEED_UNIT Unit, speed_lib::NumericalType ValueType>
 struct std::formatter<speed_lib::Speed<Unit, ValueType>>
     : speed_lib::QuantityFormatter<
@@ -588,7 +651,7 @@ struct std::formatter<speed_lib::Speed<Unit, ValueType>>
 {
 };
 
-/// @brief Formater specialization for Time
+/// @brief Formatter specialization for Time
 template <speed_lib::TIME_UNIT Unit, speed_lib::NumericalType ValueType>
 struct std::formatter<speed_lib::Time<Unit, ValueType>>
     : speed_lib::QuantityFormatter<
@@ -601,7 +664,7 @@ struct std::formatter<speed_lib::Time<Unit, ValueType>>
 {
 };
 
-/// @brief Formater specialization for Length
+/// @brief Formatter specialization for Length
 template <speed_lib::LENGTH_UNIT Unit, speed_lib::NumericalType ValueType>
 struct std::formatter<speed_lib::Length<Unit, ValueType>>
     : speed_lib::QuantityFormatter<
