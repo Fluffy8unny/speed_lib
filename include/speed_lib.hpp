@@ -113,6 +113,9 @@ namespace speed_lib
     /**
      * @brief Quantity struct represents a physical Quantity with a specific dimension (e.g., speed, time, length), unit, and underlying value type.
      * Arithmetic operations and comparisons between Quantities of the same dimension are supported, even if they are in different units of the same dimension
+     * @tparam DimensionTag Dimension category (e.g. SpeedTag).
+     * @tparam Unit Unit enum value (e.g. LENGTH_UNIT::M).
+     * @tparam ValueType Numeric storage type (e.g. double).
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> Unit, typename ValueType>
         requires NumericalType<ValueType>
@@ -121,8 +124,10 @@ namespace speed_lib
         ValueType value;
         /**
          * @brief Converts the Quantity to a different unit of the same dimension.
+         * @tparam TargetUnit Target unit (e.g. LENGTH_UNIT::KM).
          * @param[in] TargetUnit the unit to convert to, needs to be in the same dimension as the current unit
          * @returns A new Quantity object with the same dimension and value type, but in the target unit
+         * @example auto km = 1500_m.convert<speed_lib::LENGTH_UNIT::KM>();
          */
         template <UnitForTag_t<DimensionTag> TargetUnit>
         constexpr Quantity<DimensionTag, TargetUnit, ValueType> convert() const
@@ -134,8 +139,10 @@ namespace speed_lib
 
         /**
          * @brief Casting from unit of the same dimension to another implicitly
+         * @tparam TargetUnit Target unit (e.g. LENGTH_UNIT::KM).
          * @param[in] TargetUnit the unit to convert to needs to be in the same dimension as the current unit
          * @returns A new Quantity object with the same dimension and value type, but in the target unit
+         * @example speed_lib::Length<speed_lib::LENGTH_UNIT::KM, double> km = 1500_m;
          */
         template <UnitForTag_t<DimensionTag> TargetUnit>
         constexpr operator Quantity<DimensionTag, TargetUnit, ValueType>() const
@@ -154,9 +161,9 @@ namespace speed_lib
 
         /**
          * @brief Casting to the same unit, but with another underlying value type.
-         * @tparam TargetValueType The target value type to cast to.
+         * @tparam TargetValueType Target value type (e.g. double).
          * @returns A new Quantity object with the same dimension and unit, but with the target value type.
-         * @note e.g. int x = 1_m; double y=x; y now has the value 1.0, and is of type Quantity<LengthTag, LENGTH_UNIT::M, double>
+         * @example  int x = 1_m; double y=x; y now has the value 1.0, and is of type Quantity<LengthTag, LENGTH_UNIT::M, double>
          */
         template <typename TargetValueType>
             requires std::is_convertible_v<ValueType, TargetValueType> // god I love concepts
@@ -167,9 +174,10 @@ namespace speed_lib
 
         /**
          * @brief Casting to a different unit and value type simultaneously.
-         * @tparam TargetUnit The target unit to convert to, needs to be in the same dimension as the current unit.
-         * @tparam TargetValueType The target value type to cast to.
+         * @tparam TargetUnit Target unit (e.g. LENGTH_UNIT::KM).
+         * @tparam TargetValueType Target value type (e.g. double).
          * @returns A new Quantity object with the same dimension, but in the target unit and value type.
+         * @example speed_lib::Length<speed_lib::LENGTH_UNIT::KM, double> km = static_cast<speed_lib::Length<speed_lib::LENGTH_UNIT::KM, double>>(1500_m);
          */
         template <UnitForTag_t<DimensionTag> TargetUnit, typename TargetValueType>
             requires std::is_convertible_v<ValueType, TargetValueType>
@@ -273,10 +281,16 @@ namespace speed_lib
 
     /**
      * @brief Applies a binary operation after converting the RHS Quantity to the LHS unit.
+     * @tparam Op Binary operation type (e.g. std::plus<long double>).
+     * @tparam DimensionTag Dimension category (e.g. LengthTag).
+     * @tparam LeftUnit Left unit (e.g. LENGTH_UNIT::M).
+     * @tparam RightUnit Right unit (e.g. LENGTH_UNIT::KM).
+     * @tparam ValueType Numeric value type (e.g. long double).
      * @param[in] lhs Left-hand-side Quantity that determines output unit.
      * @param[in] rhs Right-hand-side Quantity, converted to the left unit before applying the operation.
      * @param[in] op Binary operation applied to the Quantity values.
      * @return Quantity with the left unit and same value type.
+     * @example auto s = speed_lib::apply_binary_op(10_m, 500_m, std::plus<long double>{});
      */
     template <typename Op, typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, UnitForTag_t<DimensionTag> RightUnit, NumericalType ValueType>
         requires std::is_invocable_r_v<ValueType, Op, ValueType, ValueType>
@@ -288,9 +302,14 @@ namespace speed_lib
 
     /**
      * @brief Adds two Quantities of the same dimension.
+     * @tparam DimensionTag Dimension category (e.g. LengthTag).
+     * @tparam LeftUnit Left unit (e.g. LENGTH_UNIT::KM).
+     * @tparam RightUnit Right unit (e.g. LENGTH_UNIT::M).
+     * @tparam ValueType Numeric value type (e.g. long double).
      * @param[in] a Left-hand-side Quantity.
      * @param[in] b Right-hand-side Quantity.
      * @return Sum in the left-hand-side unit.
+     * @example auto sum = 2_km + 500_m;
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, UnitForTag_t<DimensionTag> RightUnit, NumericalType ValueType>
     constexpr Quantity<DimensionTag, LeftUnit, ValueType> operator+(const Quantity<DimensionTag, LeftUnit, ValueType> &a, const Quantity<DimensionTag, RightUnit, ValueType> &b)
@@ -302,9 +321,14 @@ namespace speed_lib
 
     /**
      * @brief Subtracts two Quantities of the same dimension.
+     * @tparam DimensionTag Dimension category (e.g. LengthTag).
+     * @tparam LeftUnit Left unit (e.g. LENGTH_UNIT::KM).
+     * @tparam RightUnit Right unit (e.g. LENGTH_UNIT::M).
+     * @tparam ValueType Numeric value type (e.g. long double).
      * @param[in] a Left-hand-side Quantity.
      * @param[in] b Right-hand-side Quantity.
      * @return Difference in the left-hand-side unit.
+     * @example auto diff = 2_km - 500_m;
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, UnitForTag_t<DimensionTag> RightUnit, NumericalType ValueType>
     constexpr Quantity<DimensionTag, LeftUnit, ValueType> operator-(const Quantity<DimensionTag, LeftUnit, ValueType> &a, const Quantity<DimensionTag, RightUnit, ValueType> &b)
@@ -316,8 +340,12 @@ namespace speed_lib
 
     /**
      * @brief Unary negation for a Quantity.
+     * @tparam DimensionTag Dimension category (e.g. LengthTag).
+     * @tparam LeftUnit Unit (e.g. LENGTH_UNIT::M).
+     * @tparam ValueType Numeric value type (e.g. long double).
      * @param[in] q Quantity to negate.
      * @return Quantity with negated value in the same unit.
+     * @example auto neg = -5_m;
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, NumericalType ValueType>
     constexpr Quantity<DimensionTag, LeftUnit, ValueType> operator-(const Quantity<DimensionTag, LeftUnit, ValueType> &q)
@@ -329,9 +357,14 @@ namespace speed_lib
 
     /**
      * @brief Multiplies a Quantity by a scalar.
+     * @tparam DimensionTag Dimension category (e.g. LengthTag).
+     * @tparam LeftUnit Unit (e.g. LENGTH_UNIT::M).
+     * @tparam ValueType Quantity value type (e.g. long double).
+     * @tparam Scalar Scalar type (e.g. int).
      * @param[in] s Quantity operand.
      * @param[in] a Scalar multiplier.
      * @return Quantity in the same unit with common promoted value type.
+     * @example auto scaled = 10_m * 2;
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, NumericalType ValueType, NumericalType Scalar>
     constexpr Quantity<DimensionTag, LeftUnit, std::common_type_t<ValueType, Scalar>> operator*(const Quantity<DimensionTag, LeftUnit, ValueType> &s, const Scalar a)
@@ -342,9 +375,14 @@ namespace speed_lib
 
     /**
      * @brief Multiplies a scalar by a Quantity.
+     * @tparam DimensionTag Dimension category (e.g. LengthTag).
+     * @tparam LeftUnit Unit (e.g. LENGTH_UNIT::M).
+     * @tparam ValueType Quantity value type (e.g. long double).
+     * @tparam Scalar Scalar type (e.g. int).
      * @param[in] a Scalar multiplier.
      * @param[in] s Quantity operand.
      * @return Quantity in the same unit with common promoted value type.
+     * @example auto scaled = 2 * 10_m;
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, NumericalType ValueType, NumericalType Scalar>
     constexpr Quantity<DimensionTag, LeftUnit, std::common_type_t<ValueType, Scalar>> operator*(const Scalar a, const Quantity<DimensionTag, LeftUnit, ValueType> &s)
@@ -356,9 +394,14 @@ namespace speed_lib
 
     /**
      * @brief Divides a Quantity by a scalar.
+     * @tparam DimensionTag Dimension category (e.g. LengthTag).
+     * @tparam LeftUnit Unit (e.g. LENGTH_UNIT::M).
+     * @tparam ValueType Quantity value type (e.g. long double).
+     * @tparam Scalar Scalar type (e.g. int).
      * @param[in] s Quantity operand.
      * @param[in] a Scalar divisor.
      * @return Quantity in the same unit with common promoted value type.
+     * @example auto half = 10_m / 2;
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, NumericalType ValueType, NumericalType Scalar>
     constexpr Quantity<DimensionTag, LeftUnit, std::common_type_t<ValueType, Scalar>> operator/(const Quantity<DimensionTag, LeftUnit, ValueType> &s, const Scalar &a)
@@ -373,9 +416,14 @@ namespace speed_lib
 
     /**
      * @brief Divides two Quantities with the same dimension and unit.
+     * @tparam DimensionTag Dimension category (e.g. LengthTag).
+     * @tparam Unit Shared unit (e.g. LENGTH_UNIT::M).
+     * @tparam LeftValueType Left value type (e.g. int).
+     * @tparam RightValueType Right value type (e.g. long double).
      * @param[in] a Numerator Quantity.
      * @param[in] b Denominator Quantity.
      * @return Unitless ratio.
+     * @example auto ratio = 10_m / 2_m;
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> Unit, NumericalType LeftValueType, NumericalType RightValueType>
     constexpr std::common_type_t<LeftValueType, RightValueType> operator/(const Quantity<DimensionTag, Unit, LeftValueType> &a, const Quantity<DimensionTag, Unit, RightValueType> &b)
@@ -387,9 +435,15 @@ namespace speed_lib
     /**
      * @brief Divides two Quantities of the same dimension but possibly different units.
      * @details The RHS Quantity is converted to the LHS unit before division.
+     * @tparam DimensionTag Dimension category (e.g. LengthTag).
+     * @tparam LeftUnit Left unit (e.g. LENGTH_UNIT::KM).
+     * @tparam RightUnit Right unit (e.g. LENGTH_UNIT::M).
+     * @tparam LeftValueType Left value type (e.g. int).
+     * @tparam RightValueType Right value type (e.g. long double).
      * @param[in] a Numerator Quantity.
      * @param[in] b Denominator Quantity.
      * @return Unitless ratio
+     * @example auto ratio = 1_km / 500_m;
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, UnitForTag_t<DimensionTag> RightUnit, NumericalType LeftValueType, NumericalType RightValueType>
     constexpr std::common_type_t<LeftValueType, RightValueType> operator/(const Quantity<DimensionTag, LeftUnit, LeftValueType> &a, const Quantity<DimensionTag, RightUnit, RightValueType> &b)
@@ -401,9 +455,13 @@ namespace speed_lib
 
     /**
      * @brief Computes length from speed multiplied by time.
+     * @tparam SpeedUnit Speed unit (e.g. SPEED_UNIT::MS).
+     * @tparam TimeUnit Time unit (e.g. TIME_UNIT::S).
+     * @tparam ValueType Numeric value type (e.g. long double).
      * @param[in] speed Speed Quantity.
      * @param[in] time Time Quantity.
      * @return Length in meters.
+     * @example auto d = 10_ms * 5_s;
      */
     template <SPEED_UNIT SpeedUnit, TIME_UNIT TimeUnit, NumericalType ValueType>
     constexpr Length<LENGTH_UNIT::M, ValueType> operator*(const Speed<SpeedUnit, ValueType> &speed, const Time<TimeUnit, ValueType> &time)
@@ -415,9 +473,13 @@ namespace speed_lib
 
     /**
      * @brief Computes speed from length divided by time.
+     * @tparam LengthUnit Length unit (e.g. LENGTH_UNIT::M).
+     * @tparam TimeUnit Time unit (e.g. TIME_UNIT::S).
+     * @tparam ValueType Numeric value type (e.g. long double).
      * @param[in] length Length Quantity.
      * @param[in] time Time Quantity.
      * @return Speed in meters per second.
+     * @example auto v = 100_m / 5_s;
      */
     template <LENGTH_UNIT LengthUnit, TIME_UNIT TimeUnit, NumericalType ValueType>
     constexpr Speed<SPEED_UNIT::MS, ValueType> operator/(const Length<LengthUnit, ValueType> &length, const Time<TimeUnit, ValueType> &time)
@@ -520,6 +582,10 @@ namespace speed_lib
     // I'm willing to admit that using a variadic template here to generate an error message was just done for style points and is not strictly necessary
     /**
      * @brief Builds an error message for invalid format specifiers, listing the valid units for the given dimension.
+     * @tparam DimensionTag Dimension category (e.g. SpeedTag).
+     * @tparam FirstUnit First valid unit (e.g. SPEED_UNIT::MS).
+     * @tparam RemainingUnits Remaining valid units (e.g. SPEED_UNIT::KMH).
+     * @example auto msg = speed_lib::build_formatter_error_message<speed_lib::SpeedTag, speed_lib::SPEED_UNIT::MS>();
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> FirstUnit, UnitForTag_t<DimensionTag>... RemainingUnits>
     std::string build_formatter_error_message()
@@ -543,6 +609,11 @@ namespace speed_lib
      * @brief Formatter for Quantities. Prints the value followed by the unit.
      * Also parses the format string (:UNITWIDTH.PRECISIONf e.g. km10.4f) to allow for optional unit conversion and formatting options.
      * @note For example, "{:kmh8.2f}" would print the Quantity in km/h with a width of 8 and a precision of 2.
+     * @tparam DimensionTag Dimension category (e.g. SpeedTag).
+     * @tparam Unit Source unit (e.g. SPEED_UNIT::MS).
+     * @tparam ValueType Numeric value type (e.g. long double).
+     * @tparam ValidUnits Allowed target units (e.g. SPEED_UNIT::KMH).
+     * @example std::format("{:kmh8.2f}", 10_ms);
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> Unit, NumericalType ValueType, UnitForTag_t<DimensionTag>... ValidUnits>
     struct QuantityFormatter : std::formatter<ValueType, char>
@@ -550,9 +621,12 @@ namespace speed_lib
         ParsedView<DimensionTag> parsed_format;
         /**
          * @brief Converts the Quantity to the target unit if the target unit matches the candidate unit e.g. m->km
+         * @tparam CandidateUnit Current candidate unit (e.g. SPEED_UNIT::KMH).
+         * @tparam RemainingUnits Remaining candidate units (e.g. SPEED_UNIT::MPH).
          * @param[in] target_unit Requested target unit.
          * @param[in] quantity Source Quantity.
          * @param[out] formatted_value Converted numeric value in the matched candidate unit.
+         * @example // Used internally by QuantityFormatter during format conversion.
          */
         template <UnitForTag_t<DimensionTag> CandidateUnit, UnitForTag_t<DimensionTag>... RemainingUnits>
         static constexpr void convert_if_unit_matches(
@@ -597,8 +671,10 @@ namespace speed_lib
         }
         /**
          * @brief Formats the Quantity according to the parsed format specifier.
+         * @tparam FormatContext Formatting context type (e.g. std::format_context).
          * @param[in] quantity Quantity to format.
          * @param[in,out] ctx Output format context receiving formatted text.
+         * @example std::format("{}", 10_ms);
          */
         template <typename FormatContext>
         auto format(const Quantity<DimensionTag, Unit, ValueType> &quantity, FormatContext &ctx) const
@@ -636,7 +712,12 @@ namespace speed_lib
     };
 }
 
-/// @brief Formatter specialization for Speed
+/**
+ * @brief Formatter specialization for Speed.
+ * @tparam Unit Speed unit (e.g. SPEED_UNIT::KMH).
+ * @tparam ValueType Numeric value type (e.g. long double).
+ * @example std::format("{}", 10_kmh);
+ */
 template <speed_lib::SPEED_UNIT Unit, speed_lib::NumericalType ValueType>
 struct std::formatter<speed_lib::Speed<Unit, ValueType>>
     : speed_lib::QuantityFormatter<
@@ -651,7 +732,12 @@ struct std::formatter<speed_lib::Speed<Unit, ValueType>>
 {
 };
 
-/// @brief Formatter specialization for Time
+/**
+ * @brief Formatter specialization for Time.
+ * @tparam Unit Time unit (e.g. TIME_UNIT::S).
+ * @tparam ValueType Numeric value type (e.g. long double).
+ * @example std::format("{}", 5_s);
+ */
 template <speed_lib::TIME_UNIT Unit, speed_lib::NumericalType ValueType>
 struct std::formatter<speed_lib::Time<Unit, ValueType>>
     : speed_lib::QuantityFormatter<
@@ -664,7 +750,12 @@ struct std::formatter<speed_lib::Time<Unit, ValueType>>
 {
 };
 
-/// @brief Formatter specialization for Length
+/**
+ * @brief Formatter specialization for Length.
+ * @tparam Unit Length unit (e.g. LENGTH_UNIT::M).
+ * @tparam ValueType Numeric value type (e.g. long double).
+ * @example std::format("{}", 42_m);
+ */
 template <speed_lib::LENGTH_UNIT Unit, speed_lib::NumericalType ValueType>
 struct std::formatter<speed_lib::Length<Unit, ValueType>>
     : speed_lib::QuantityFormatter<
