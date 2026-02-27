@@ -159,6 +159,21 @@ concept SpeedTimesTimeCompiles = requires(Speed<SPEED_UNIT::MS, T> speed, Time<T
 };
 
 template <typename T>
+concept SpeedTimesSpeedCompiles = requires(Speed<SPEED_UNIT::MS, T> a, Speed<SPEED_UNIT::KMH, T> b) {
+    a * b;
+};
+
+template <typename T>
+concept TimeTimesTimeCompiles = requires(Time<TIME_UNIT::S, T> a, Time<TIME_UNIT::MIN, T> b) {
+    a * b;
+};
+
+template <typename T>
+concept LengthTimesLengthCompiles = requires(Length<LENGTH_UNIT::M, T> a, Length<LENGTH_UNIT::KM, T> b) {
+    a * b;
+};
+
+template <typename T>
 concept LengthDivTimeCompiles = requires(Length<LENGTH_UNIT::M, T> length, Time<TIME_UNIT::S, T> time) {
     length / time;
 };
@@ -172,7 +187,14 @@ static_assert(SpeedTimesScalarCompiles<double>);
 static_assert(ScalarTimesSpeedCompiles<double>);
 static_assert(SpeedDivScalarCompiles<double>);
 static_assert(SpeedTimesTimeCompiles<double>);
+static_assert(!SpeedTimesSpeedCompiles<double>);
+static_assert(!TimeTimesTimeCompiles<double>);
+static_assert(!LengthTimesLengthCompiles<double>);
 static_assert(LengthDivTimeCompiles<double>);
+
+constexpr Length<LENGTH_UNIT::M, double> one_thousand_m{1000.0};
+constexpr Length<LENGTH_UNIT::KM, double> one_km_for_ratio{1.0};
+static_assert((one_thousand_m / one_km_for_ratio) == 1.0);
 
 int main()
 {

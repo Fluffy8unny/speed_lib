@@ -62,6 +62,36 @@ TEST(ArithmeticTests, DivisionBySpeed)
     EXPECT_DOUBLE_EQ(result, 5.0);
 }
 
+TEST(ArithmeticTests, DivisionBySpeedSameUnitMixedValueTypes)
+{
+    const Speed<SPEED_UNIT::MS, int> s1{10};
+    const Speed<SPEED_UNIT::MS, double> s2{2.0};
+    const auto result = s1 / s2;
+
+    EXPECT_TRUE((std::is_same_v<std::remove_cvref_t<decltype(result)>, double>));
+    EXPECT_DOUBLE_EQ(result, 5.0);
+}
+
+TEST(ArithmeticTests, DivisionBySpeedDifferentUnitsMixedValueTypes)
+{
+    const Speed<SPEED_UNIT::MS, int> s1{10};
+    const Speed<SPEED_UNIT::KMH, double> s2{36.0};
+    const auto result = s1 / s2;
+
+    EXPECT_TRUE((std::is_same_v<std::remove_cvref_t<decltype(result)>, double>));
+    EXPECT_DOUBLE_EQ(result, 1.0);
+}
+
+TEST(ArithmeticTests, DivisionByLengthImplicitUnitConversion)
+{
+    const Length<LENGTH_UNIT::M, double> meters{1000.0};
+    const Length<LENGTH_UNIT::KM, double> kilometers{1.0};
+    const auto result = meters / kilometers;
+
+    EXPECT_TRUE((std::is_same_v<std::remove_cvref_t<decltype(result)>, double>));
+    EXPECT_DOUBLE_EQ(result, 1.0);
+}
+
 TEST(ArithmeticTests, MixedUnits)
 {
     auto s1 = 10.0_ms;
