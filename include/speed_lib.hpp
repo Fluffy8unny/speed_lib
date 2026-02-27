@@ -261,6 +261,7 @@ namespace speed_lib
     constexpr void operator _operator(const Quantity<DimensionTag, LeftUnit, LeftValueType> &, \
                                       const Quantity<DimensionTag, RightUnit, RightValueType> &) = delete;
 
+    // Intra dimension operations. These are defined for all combinations of units within the same dimension, and the result is in the left-hand-side unit.
     template <typename Op, typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, NumericalType ValueType>
         requires std::is_invocable_r_v<ValueType, Op, ValueType, ValueType>
     constexpr Quantity<DimensionTag, LeftUnit, ValueType> apply_binary_op(const Quantity<DimensionTag, LeftUnit, ValueType> &lhs, const Quantity<DimensionTag, LeftUnit, ValueType> &rhs, Op op)
@@ -338,6 +339,7 @@ namespace speed_lib
 
 #undef DEFINE_MIXED_DIMENSION_OPERATOR_DELETE
 #undef DEFINE_SAME_DIMENSION_OPERATOR_DELETE
+    // Inter dimension operations. These are only defined for certain combinations of dimensions, and the result is always in the base unit of the resulting dimension.
 
     /// @brief Divides two quantities with the same dimension and unit.
     /// @return Unitless ratio.
@@ -417,6 +419,7 @@ namespace speed_lib
         return true;
     }
 
+    // check if any of the provided units for this dimension can be parsed
     template <typename DimensionTag, UnitForTag_t<DimensionTag>... Units>
     constexpr bool try_parse_any_unit(std::string_view s, std::size_t &cursor, ParsedView<DimensionTag> &out)
     {
@@ -426,36 +429,41 @@ namespace speed_lib
     template <typename DimensionTag, UnitForTag_t<DimensionTag>... Units>
     constexpr std::optional<ParsedView<DimensionTag>> parse_quantity(std::string_view s)
     {
+        // We're parsing in 3 steps, that represent the 3 main components of a format specifier: the unit, the width, and the precision
+        // The unit is mandatory, while the width and precision are optional
         std::size_t cursor = 0;
         auto consume_character = [&](char c) constexpr -> bool
         {
             return cursor < s.size() and s[cursor] == c ? (++cursor, true) : false;
         };
-
+        // parse the unit
         ParsedView<DimensionTag> result{};
         if (!try_parse_any_unit<DimensionTag, Units...>(s, cursor, result))
-            return std::nullopt;
+            return std::nullopt; // no unit means it's not a valid format specifier
 
+        // try to parse the width, which is an optional unsigned integer that comes after the unit
         if (auto w = parse_unsigned_at(s, cursor))
             result.width = *w;
-
+        // try to parse the precision, which is an optional unsigned integer that comes after a '.' character, and is followed by an 'f'
+        // this is meant to mirror the syntax of the precision specifier for floating point types in the standard library
         if (consume_character('.'))
         {
             if (auto p = parse_unsigned_at(s, cursor); p)
                 result.precision = *p;
             else
                 return std::nullopt;
-
+            // can't forget the f
             if (!consume_character('f'))
                 return std::nullopt;
         }
-
+        // ther is junk at the end, this is invalid
         if (cursor != s.size())
             return std::nullopt;
 
         return result;
     }
 
+    // I'm willing to admit that using a varidic template here to generate an error message was just done for style poiints and is not strictly necessary
     template <typename DimensionTag, UnitForTag_t<DimensionTag> FirstUnit, UnitForTag_t<DimensionTag>... RemainingUnits>
     std::string build_formatter_error_message()
     {
@@ -474,12 +482,18 @@ namespace speed_lib
             units,
             UnitTraits<DimensionTag, FirstUnit>::suffix);
     }
-
+    /**
+     * @brief Formatter for quantities. Prints the value followed by the unit.
+     * Also parses the format string (:UNITWIDTH.PRECESSIONf e.g. km10.4f) to allow for optional unit conversion and formatting options.
+     * @note For example, "{:kmh8.2f}" would print the quantity in km/h with a width of 8 and a precision of 2.
+     */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> Unit, NumericalType ValueType, UnitForTag_t<DimensionTag>... ValidUnits>
     struct QuantityFormatter : std::formatter<ValueType, char>
     {
         ParsedView<DimensionTag> parsed_format;
-
+        /**
+         * @brief Converts the quantity to the target unit if the target unit matches the candidate unit e.g. m->km
+         */
         template <UnitForTag_t<DimensionTag> CandidateUnit, UnitForTag_t<DimensionTag>... RemainingUnits>
         static constexpr void convert_if_unit_matches(
             UnitForTag_t<DimensionTag> target_unit,
@@ -495,7 +509,9 @@ namespace speed_lib
             if constexpr (sizeof...(RemainingUnits) > 0)
                 convert_if_unit_matches<RemainingUnits...>(target_unit, quantity, formatted_value);
         }
-
+        /**
+         * @brief Parses the format specifier for the quantity.
+         */
         constexpr auto parse(std::format_parse_context &ctx)
         {
             auto it = ctx.begin();
@@ -518,7 +534,9 @@ namespace speed_lib
 
             return it;
         }
-
+        /**
+         * @brief Formats the quantity according to the parsed format specifier.
+         */
         template <typename FormatContext>
         auto format(const Quantity<DimensionTag, Unit, ValueType> &quantity, FormatContext &ctx) const
         {

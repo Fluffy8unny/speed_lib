@@ -51,8 +51,8 @@ int main()
     // Wrong unit asignment doesn't compile!!!!!!!!!
     // auto wrong = 10.0_s + 10.0_ms; // error: cannot convert 'Time<TIME_UNIT::S, long double>' to 'Speed<SPEED_UNIT::MS, long double>'
     // auto wrong2 = 10.0_kmh * 10.0_km; // error: no match for 'operator*' (operand types are 'Speed<SPEED_UNIT::KMH, long double>' and 'Length<LENGTH_UNIT::KM, long double>')
-    auto ok = 10.0_kmh + 10.0_kmh; // works fine, same units
-    auto ok2 = 10.0_s + 10.0_min;  // works fine, different time units but same dimension
+    [[maybe_unused]] auto ok = 10.0_kmh + 10.0_kmh; // works fine, same units
+    auto ok2 = 10.0_s + 10.0_min;                   // works fine, different time units but same dimension
     std::println("{} + {} = {}", 10.0_s, 10.0_min, ok2);
 
     // By not using literals, you can define the type the calculations are performed on

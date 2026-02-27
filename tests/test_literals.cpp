@@ -1,4 +1,3 @@
-#include <array>
 #include "../include/speed_lib.hpp"
 #include <gtest/gtest.h>
 
