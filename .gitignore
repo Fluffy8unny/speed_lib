@@ -39,3 +39,21 @@
 
 # debug information files
 *.dwo
+
+# CMake generated files/directories
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+DartConfiguration.tcl
+Makefile
+CMakeFiles/
+Testing/
+
+# Out-of-source build directory
+build/
+
+# Generated files inside subdirectories
+**/CMakeFiles/
+**/cmake_install.cmake
+**/CTestTestfile.cmake
+**/Makefile
