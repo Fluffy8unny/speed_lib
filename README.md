@@ -1,7 +1,74 @@
 # speed_lib
-Simple header only library for handling different representations of speed
+Header-only, compile-time units library with custom literals, automatic cross-unit conversion, and compile-time errors for invalid type/dimension operations, so these safety checks add no runtime slowdown.
 
-## Layout
+## Motivation
+
+The motivation for this library comes from professional projects where a lot of time was lost to bugs caused by unit mismatches (for example, m/s vs km/h) between teammates and system boundaries. `speed_lib` exists to prevent those bugs in the future by making invalid unit usage fail at compile time instead of slipping into runtime behavior.
+
+
+## Features
+
+This section mirrors [examples/example.cpp](examples/example.cpp).
+
+```cpp
+#include "speed_lib.hpp"
+#include <print>
+
+using namespace speed_lib;
+
+int main()
+{
+	auto speed = 10.0_kmh;
+	std::println("Default: {}", speed);            // 10 km/h
+	std::println("As m/s: {:ms}", speed);          // 2.777... m/s
+	std::println("Formatted: {:kmh10.2f}", speed); //      10.00 km/h
+}
+```
+
+### Derived quantities and arithmetic
+
+```cpp
+auto t = 30.0_s;
+auto d = 100.0_m;
+
+auto v = d / t;               // Length / Time -> Speed
+auto total = v + 20.0_kmh;    // automatic unit conversion
+auto scaled = 2.0 * v;
+```
+
+### Comparisons
+
+```cpp
+if (10.0_ms >= 10.0_kmh)
+{
+	// true
+}
+```
+
+### Explicit numeric types
+
+```cpp
+Time<TIME_UNIT::S, double> t{30.0};
+Length<LENGTH_UNIT::M, double> d{100.0};
+auto v = d / t; // Speed<SPEED_UNIT::MS, double>
+```
+
+### Formatting syntax
+
+The quantity formatter accepts:
+
+- `UNIT` (required), e.g. `ms`, `kmh`, `min`, `km`
+- optional `WIDTH`, e.g. `{:kmh10}`
+- optional `.PRECISIONf`, e.g. `{:kmh10.2f}`
+
+Pattern: `{:UNITWIDTH.PRECISIONf}`
+
+## Installation
+
+`speed_lib` is header-only. There is nothing to link and no external dependency to install; it only depends on the C++ standard library.
+Copy or vendor the `include/` directory into your project and add it to your compiler include paths.
+You need a C++23-capable compiler and standard library.
+
 ## Extending with a new unit dimension
 
 1. Add a new header under `include/speed_lib/units/` (for example `mass.hpp`).
