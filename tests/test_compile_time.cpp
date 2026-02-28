@@ -21,7 +21,7 @@ concept SpeedPlusDoubleCompiles = requires(Speed<SPEED_UNIT::MS, T> speed, T sca
     speed + scalar;
 };
 
-static_assert(SpeedPlusDoubleCompiles<double>);
+static_assert(!SpeedPlusDoubleCompiles<double>);
 
 template <typename T>
 concept SpeedPlusStringCompiles = requires(Speed<SPEED_UNIT::MS, T> speed, std::string text) {
@@ -154,6 +154,36 @@ concept SpeedDivScalarCompiles = requires(Speed<SPEED_UNIT::MS, T> speed, T scal
 };
 
 template <typename T>
+concept TimeTimesScalarCompiles = requires(Time<TIME_UNIT::S, T> time, T scalar) {
+    time * scalar;
+};
+
+template <typename T>
+concept ScalarTimesTimeCompiles = requires(Time<TIME_UNIT::S, T> time, T scalar) {
+    scalar * time;
+};
+
+template <typename T>
+concept TimeDivScalarCompiles = requires(Time<TIME_UNIT::S, T> time, T scalar) {
+    time / scalar;
+};
+
+template <typename T>
+concept LengthTimesScalarCompiles = requires(Length<LENGTH_UNIT::M, T> length, T scalar) {
+    length * scalar;
+};
+
+template <typename T>
+concept ScalarTimesLengthCompiles = requires(Length<LENGTH_UNIT::M, T> length, T scalar) {
+    scalar * length;
+};
+
+template <typename T>
+concept LengthDivScalarCompiles = requires(Length<LENGTH_UNIT::M, T> length, T scalar) {
+    length / scalar;
+};
+
+template <typename T>
 concept SpeedTimesTimeCompiles = requires(Speed<SPEED_UNIT::MS, T> speed, Time<TIME_UNIT::S, T> time) {
     speed * time;
 };
@@ -178,6 +208,26 @@ concept LengthDivTimeCompiles = requires(Length<LENGTH_UNIT::M, T> length, Time<
     length / time;
 };
 
+template <typename T>
+concept SpeedEqualsSpeedCompiles = requires(Speed<SPEED_UNIT::MS, T> a, Speed<SPEED_UNIT::KMH, T> b) {
+    { a == b } -> std::same_as<bool>;
+};
+
+template <typename T>
+concept SpeedEqualsTimeCompiles = requires(Speed<SPEED_UNIT::MS, T> speed, Time<TIME_UNIT::S, T> time) {
+    speed == time;
+};
+
+template <typename T>
+concept SpeedSpaceshipSpeedCompiles = requires(Speed<SPEED_UNIT::MS, T> a, Speed<SPEED_UNIT::KMH, T> b) {
+    a <=> b;
+};
+
+template <typename T>
+concept SpeedSpaceshipTimeCompiles = requires(Speed<SPEED_UNIT::MS, T> speed, Time<TIME_UNIT::S, T> time) {
+    speed <=> time;
+};
+
 static_assert(SpeedPlusSpeedCompiles<double>);
 static_assert(TimePlusTimeCompiles<double>);
 static_assert(LengthPlusLengthCompiles<double>);
@@ -186,15 +236,30 @@ static_assert(UnaryMinusSpeedCompiles<double>);
 static_assert(SpeedTimesScalarCompiles<double>);
 static_assert(ScalarTimesSpeedCompiles<double>);
 static_assert(SpeedDivScalarCompiles<double>);
+static_assert(TimeTimesScalarCompiles<double>);
+static_assert(ScalarTimesTimeCompiles<double>);
+static_assert(TimeDivScalarCompiles<double>);
+static_assert(LengthTimesScalarCompiles<double>);
+static_assert(ScalarTimesLengthCompiles<double>);
+static_assert(LengthDivScalarCompiles<double>);
 static_assert(SpeedTimesTimeCompiles<double>);
 static_assert(!SpeedTimesSpeedCompiles<double>);
 static_assert(!TimeTimesTimeCompiles<double>);
 static_assert(!LengthTimesLengthCompiles<double>);
 static_assert(LengthDivTimeCompiles<double>);
+static_assert(SpeedEqualsSpeedCompiles<double>);
+static_assert(!SpeedEqualsTimeCompiles<double>);
+static_assert(SpeedSpaceshipSpeedCompiles<double>);
+static_assert(!SpeedSpaceshipTimeCompiles<double>);
 
 constexpr Length<LENGTH_UNIT::M, double> one_thousand_m{1000.0};
 constexpr Length<LENGTH_UNIT::KM, double> one_km_for_ratio{1.0};
 static_assert((one_thousand_m / one_km_for_ratio) == 1.0);
+
+constexpr Length<LENGTH_UNIT::KM, int> one_km_for_equality{1};
+constexpr Length<LENGTH_UNIT::M, int> one_thousand_m_for_equality{1000};
+static_assert(one_km_for_equality == one_thousand_m_for_equality);
+static_assert(!(one_km_for_equality != one_thousand_m_for_equality));
 
 int main()
 {

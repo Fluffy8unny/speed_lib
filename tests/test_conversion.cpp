@@ -116,10 +116,11 @@ TEST(SpeedConversion, ValueTypeConversionOperator)
     EXPECT_DOUBLE_EQ(value, 36.5);
 }
 
-TEST(SpeedConversion, ValueTypeImplicitConversionOperator)
+TEST(SpeedConversion, ValueTypeImplicitConversionIsDisabled)
 {
     Speed<SPEED_UNIT::KMH, double> s{36.5};
-    const double value = s;
+    static_assert(!std::is_convertible_v<Speed<SPEED_UNIT::KMH, double>, double>);
+    const double value = static_cast<double>(s);
     EXPECT_DOUBLE_EQ(value, 36.5);
 }
 

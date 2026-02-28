@@ -11,6 +11,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 
 namespace speed_lib
 {
@@ -154,7 +155,7 @@ namespace speed_lib
          * @brief Extracts the raw value of the Quantity.
          * @returns The underlying value of the Quantity.
          */
-        constexpr operator ValueType() const
+        constexpr explicit operator ValueType() const
         {
             return value;
         }
@@ -187,23 +188,92 @@ namespace speed_lib
             return static_cast<Quantity<DimensionTag, TargetUnit, TargetValueType>>(converted_quantity);
         }
 
-        // units can be compared with each other, as long as they are of the same dimension...
+        /**
+         * @brief Three-way comparison for Quantities with identical dimension, unit, and value type.
+         * @param[in] other Quantity to compare against.
+         * @return Comparison category result of the underlying values.
+         * @example auto cmp = 10_m <=> 12_m;
+         */
         constexpr auto operator<=>(const Quantity &other) const
         {
             return value <=> other.value;
         }
 
-        // even if they are not in the same unit
+        /**
+         * @brief Equality comparison for Quantities with identical dimension, unit, and value type.
+         * @param[in] other Quantity to compare against.
+         * @return true if underlying values are equal, otherwise false.
+         * @example bool eq = 10_m == 10_m;
+         */
+        constexpr bool operator==(const Quantity &other) const
+        {
+            return value == other.value;
+        }
+
+        /**
+         * @brief Normalizes this Quantity and another same-dimension Quantity to a common base-space value type.
+         * @tparam OtherUnit Unit of the right-hand-side Quantity.
+         * @tparam OtherValueType Value type of the right-hand-side Quantity.
+         * @param[in] other Quantity to normalize alongside this Quantity.
+         * @return Pair of values converted to base units and promoted to a common type.
+         */
+        template <UnitForTag_t<DimensionTag> OtherUnit, typename OtherValueType>
+        constexpr auto to_common_base_pair(const Quantity<DimensionTag, OtherUnit, OtherValueType> &other) const
+        {
+            using LeftBaseType = std::common_type_t<long double, ValueType>;
+            using RightBaseType = std::common_type_t<long double, OtherValueType>;
+
+            const auto lhs_in_base = static_cast<LeftBaseType>(value) * UnitTraits<DimensionTag, Unit>::scale_to_base;
+            const auto rhs_in_base = static_cast<RightBaseType>(other.value) * UnitTraits<DimensionTag, OtherUnit>::scale_to_base;
+
+            using CommonType = std::common_type_t<LeftBaseType, RightBaseType>;
+            return std::pair<CommonType, CommonType>{
+                static_cast<CommonType>(lhs_in_base),
+                static_cast<CommonType>(rhs_in_base)};
+        }
+
+        /**
+         * @brief Three-way comparison for Quantities of the same dimension but different units and/or value types.
+         * @details The RHS Quantity is converted to the LHS unit before comparison.
+         * @tparam OtherUnit Unit of the right-hand-side Quantity.
+         * @tparam OtherValueType Value type of the right-hand-side Quantity.
+         * @param[in] other Quantity to compare against.
+         * @return Comparison category result after unit conversion and common-type promotion.
+         * @example auto cmp = 1_km <=> 900_m;
+         */
         template <UnitForTag_t<DimensionTag> OtherUnit, typename OtherValueType>
             requires std::three_way_comparable_with<ValueType, OtherValueType>
         constexpr auto operator<=>(const Quantity<DimensionTag, OtherUnit, OtherValueType> &other) const
         {
-            const auto converted_other = other.template convert<Unit>();
-            using CommonType = std::common_type_t<ValueType, OtherValueType>;
-            return static_cast<CommonType>(value) <=> static_cast<CommonType>(converted_other.value);
+            const auto [lhs_in_base, rhs_in_base] = to_common_base_pair(other);
+            return lhs_in_base <=> rhs_in_base;
+        }
+
+        /**
+         * @brief Equality comparison for Quantities of the same dimension but different units and/or value types.
+         * @details The RHS Quantity is converted to the LHS unit before comparison.
+         * @tparam OtherUnit Unit of the right-hand-side Quantity.
+         * @tparam OtherValueType Value type of the right-hand-side Quantity.
+         * @param[in] other Quantity to compare against.
+         * @return true if values are equal after unit conversion and common-type promotion, otherwise false.
+         * @example bool eq = 1_km == 1000_m;
+         */
+        template <UnitForTag_t<DimensionTag> OtherUnit, typename OtherValueType>
+            requires std::equality_comparable_with<ValueType, OtherValueType>
+        constexpr bool operator==(const Quantity<DimensionTag, OtherUnit, OtherValueType> &other) const
+        {
+            const auto [lhs_in_base, rhs_in_base] = to_common_base_pair(other);
+            return lhs_in_base == rhs_in_base;
         }
 
         // someone is gonna complain if I don't do it
+        /**
+         * @brief Streams a Quantity to an output stream in the format "<value> <unit suffix>".
+         * @param[in,out] os Output stream.
+         * @param[in] q Quantity to stream.
+         * @return Reference to the output stream.
+         * @example std::cout << 42_m;
+         */
         friend std::ostream &operator<<(std::ostream &os, const Quantity &q)
         {
             return os << q.value << ' ' << UnitTraits<DimensionTag, Unit>::format_specifier;
@@ -330,6 +400,8 @@ namespace speed_lib
     }
 
     DEFINE_MIXED_DIMENSION_OPERATOR_DELETE(+)
+    DEFINE_MIXED_DIMENSION_OPERATOR_DELETE(==)
+    DEFINE_MIXED_DIMENSION_OPERATOR_DELETE(<=>)
 
     /**
      * @brief Subtracts two Quantities of the same dimension.
