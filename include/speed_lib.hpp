@@ -6,4 +6,3 @@
 #include "speed_lib/units/length.hpp"
 #include "speed_lib/mixed_operations.hpp"
 #include "speed_lib/formatting.hpp"
-#include "speed_lib/formatting_specializations.hpp"

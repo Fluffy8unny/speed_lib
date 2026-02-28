@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../common.hpp"
+#include "../formatting.hpp"
 #include "../detail/unit_macros.hpp"
 
 namespace speed_lib
@@ -32,5 +33,23 @@ namespace speed_lib
     SPEED_LIB_DEFINE_LITERAL_OPERATOR(TimeTag, TIME_UNIT, MIN, min);
     SPEED_LIB_DEFINE_LITERAL_OPERATOR(TimeTag, TIME_UNIT, H, h);
 }
+
+/**
+ * @brief Formatter specialization for Time.
+ * @tparam Unit Time unit (e.g. TIME_UNIT::S).
+ * @tparam ValueType Numeric value type (e.g. long double).
+ * @example std::format("{}", 5_s);
+ */
+template <speed_lib::TIME_UNIT Unit, speed_lib::NumericalType ValueType>
+struct std::formatter<speed_lib::Time<Unit, ValueType>>
+    : speed_lib::QuantityFormatter<
+          speed_lib::TimeTag,
+          Unit,
+          ValueType,
+          speed_lib::TIME_UNIT::S,
+          speed_lib::TIME_UNIT::MIN,
+          speed_lib::TIME_UNIT::H>
+{
+};
 
 #include "../detail/unit_macros_undef.hpp"

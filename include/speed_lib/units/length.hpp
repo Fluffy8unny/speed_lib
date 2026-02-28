@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../common.hpp"
+#include "../formatting.hpp"
 #include "../detail/unit_macros.hpp"
 
 namespace speed_lib
@@ -35,5 +36,24 @@ namespace speed_lib
     SPEED_LIB_DEFINE_LITERAL_OPERATOR(LengthTag, LENGTH_UNIT, MI, mi);
     SPEED_LIB_DEFINE_LITERAL_OPERATOR(LengthTag, LENGTH_UNIT, FT, ft);
 }
+
+/**
+ * @brief Formatter specialization for Length.
+ * @tparam Unit Length unit (e.g. LENGTH_UNIT::M).
+ * @tparam ValueType Numeric value type (e.g. long double).
+ * @example std::format("{}", 42_m);
+ */
+template <speed_lib::LENGTH_UNIT Unit, speed_lib::NumericalType ValueType>
+struct std::formatter<speed_lib::Length<Unit, ValueType>>
+    : speed_lib::QuantityFormatter<
+          speed_lib::LengthTag,
+          Unit,
+          ValueType,
+          speed_lib::LENGTH_UNIT::KM,
+          speed_lib::LENGTH_UNIT::MI,
+          speed_lib::LENGTH_UNIT::FT,
+          speed_lib::LENGTH_UNIT::M>
+{
+};
 
 #include "../detail/unit_macros_undef.hpp"

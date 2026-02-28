@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../common.hpp"
+#include "../formatting.hpp"
 #include "../detail/unit_macros.hpp"
 
 namespace speed_lib
@@ -38,5 +39,25 @@ namespace speed_lib
     SPEED_LIB_DEFINE_LITERAL_OPERATOR(SpeedTag, SPEED_UNIT, KNT, knt);
     SPEED_LIB_DEFINE_LITERAL_OPERATOR(SpeedTag, SPEED_UNIT, C, c);
 }
+
+/**
+ * @brief Formatter specialization for Speed.
+ * @tparam Unit Speed unit (e.g. SPEED_UNIT::KMH).
+ * @tparam ValueType Numeric value type (e.g. long double).
+ * @example std::format("{}", 10_kmh);
+ */
+template <speed_lib::SPEED_UNIT Unit, speed_lib::NumericalType ValueType>
+struct std::formatter<speed_lib::Speed<Unit, ValueType>>
+    : speed_lib::QuantityFormatter<
+          speed_lib::SpeedTag,
+          Unit,
+          ValueType,
+          speed_lib::SPEED_UNIT::MS,
+          speed_lib::SPEED_UNIT::KMH,
+          speed_lib::SPEED_UNIT::MPH,
+          speed_lib::SPEED_UNIT::KNT,
+          speed_lib::SPEED_UNIT::C>
+{
+};
 
 #include "../detail/unit_macros_undef.hpp"

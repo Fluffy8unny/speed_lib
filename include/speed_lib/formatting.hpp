@@ -8,9 +8,7 @@
 #include <string>
 #include <string_view>
 
-#include "units/length.hpp"
-#include "units/speed.hpp"
-#include "units/time.hpp"
+#include "common.hpp"
 
 namespace speed_lib
 {
