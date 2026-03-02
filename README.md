@@ -48,9 +48,18 @@ if (10.0_ms >= 10.0_kmh)
 ### Explicit numeric types
 
 ```cpp
-Time<TIME_UNIT::S, double> t{30.0};
-Length<LENGTH_UNIT::M, double> d{100.0};
-auto v = d / t; // Speed<SPEED_UNIT::MS, double>
+Time<TIME_UNIT::S, int> t{30};
+Length<LENGTH_UNIT::M, int> d{100};
+auto v = d / t; // Speed<SPEED_UNIT::MS, int>
+```
+
+### Compile-time type validation
+
+```cpp
+auto d = 100.0_m;
+auto t = 30.0_s;
+
+// auto invalid = d + t; // compile-time error: incompatible dimensions (Length + Time)
 ```
 
 ### Formatting syntax
