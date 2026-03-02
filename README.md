@@ -89,3 +89,53 @@ You need a C++23-capable compiler and standard library.
 4. Add your alias template (like `using Mass = Quantity<...>`).
 5. Include your new unit header in [include/speed_lib.hpp](include/speed_lib.hpp).
 6. If needed, add cross-dimension operators (e.g. length/time -> speed) in [include/speed_lib/mixed_operations.hpp](include/speed_lib/mixed_operations.hpp).
+
+### Example implementation
+Example `include/speed_lib/units/mass.hpp`:
+
+```cpp
+#pragma once
+
+#include "../common.hpp"
+#include "../formatting.hpp"
+#include "../detail/unit_macros.hpp"
+
+namespace speed_lib
+{
+	enum class MASS_UNIT : char
+	{
+		G,  // base unit
+		KG,
+		LB
+	};
+
+	SPEED_LIB_DEFINE_TAG_WITH_UNIT(MassTag, MASS_UNIT)
+
+	SPEED_LIB_DEFINE_UNIT_TRAITS(MassTag, MASS_UNIT::G, 1.0L, "g", "g", "Weight")
+	SPEED_LIB_DEFINE_UNIT_TRAITS(MassTag, MASS_UNIT::KG, 1000.0L, "kg", "kg", "Weight")
+	SPEED_LIB_DEFINE_UNIT_TRAITS(MassTag, MASS_UNIT::LB, 453.59237L, "lb", "lb", "Weight")
+
+	template <MASS_UNIT Unit, typename ValueType>
+	using Mass = Quantity<MassTag, Unit, ValueType>;
+
+	SPEED_LIB_DEFINE_LITERAL_OPERATOR(MassTag, MASS_UNIT, G, g);
+	SPEED_LIB_DEFINE_LITERAL_OPERATOR(MassTag, MASS_UNIT, KG, kg);
+	SPEED_LIB_DEFINE_LITERAL_OPERATOR(MassTag, MASS_UNIT, LB, lb);
+}
+
+template <speed_lib::MASS_UNIT Unit, speed_lib::NumericalType ValueType>
+struct std::formatter<speed_lib::Mass<Unit, ValueType>>
+	: speed_lib::QuantityFormatter<
+		  speed_lib::MassTag,
+		  Unit,
+		  ValueType,
+		  speed_lib::MASS_UNIT::G,
+		  speed_lib::MASS_UNIT::KG,
+		  speed_lib::MASS_UNIT::LB>
+{
+};
+
+#include "../detail/unit_macros_undef.hpp"
+```
+
+Then add `#include "speed_lib/units/mass.hpp"` to [include/speed_lib.hpp](include/speed_lib.hpp).
