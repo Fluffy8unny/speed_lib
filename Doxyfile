@@ -1,0 +1,58 @@
+# Doxygen configuration for speed_lib
+
+PROJECT_NAME           = "speed_lib"
+PROJECT_BRIEF          = "Header-only C++ units library"
+OUTPUT_DIRECTORY       = docs/doxygen
+CREATE_SUBDIRS         = NO
+
+INPUT                  = README.md include
+FILE_PATTERNS          = *.hpp *.h *.md
+RECURSIVE              = YES
+
+USE_MDFILE_AS_MAINPAGE = README.md
+
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+
+OPTIMIZE_OUTPUT_FOR_C  = NO
+OPTIMIZE_OUTPUT_JAVA   = NO
+OPTIMIZE_FOR_FORTRAN   = NO
+OPTIMIZE_OUTPUT_VHDL   = NO
+
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+GENERATE_LATEX         = NO
+GENERATE_XML           = NO
+GENERATE_MAN           = NO
+GENERATE_RTF           = NO
+
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = NO
+WARN_IF_DOC_ERROR      = YES
+
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = NO
+
+FULL_PATH_NAMES        = NO
+
+MARKDOWN_SUPPORT       = YES
+AUTOLINK_SUPPORT       = YES
+BUILTIN_STL_SUPPORT    = YES
+
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = NO
+SKIP_FUNCTION_MACROS   = NO
+EXPAND_AS_DEFINED      = SPEED_LIB_DEFINE_TAG_WITH_UNIT \
+						 SPEED_LIB_DEFINE_UNIT_TRAITS \
+						 SPEED_LIB_DEFINE_LITERAL_OPERATOR
+
+HAVE_DOT               = NO
+CALL_GRAPH             = NO
+CALLER_GRAPH           = NO
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES

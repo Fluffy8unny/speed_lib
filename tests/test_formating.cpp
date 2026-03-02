@@ -143,3 +143,51 @@ TEST(LengthFormatting, ConvertsWhenFormattingToDifferentLengthUnit)
     auto l_mi = 1.0_mi;
     EXPECT_EQ(std::format("{:ft}", l_mi), "5280 ft");
 }
+
+TEST(TemperatureFormatting, AllUnits)
+{
+    auto t_k = 273.15_k;
+    auto t_c = 0.0_degc;
+    auto t_f = 32.0_degf;
+
+    EXPECT_EQ(std::format("{:k}", t_k), "273.15 K");
+    EXPECT_EQ(std::format("{:degc}", t_c), "0 °C");
+    EXPECT_EQ(std::format("{:degf}", t_f), "32 °F");
+}
+
+TEST(TemperatureFormatting, ConvertsWhenFormattingToDifferentTemperatureUnit)
+{
+    auto t_c = 100.0_degc;
+    EXPECT_EQ(std::format("{:degf}", t_c), "212 °F");
+
+    auto t_f = 32.0_degf;
+    EXPECT_EQ(std::format("{:k.2f}", t_f), "273.15 K");
+}
+
+TEST(TemperatureFormatting, PrecisionAndWidth)
+{
+    auto t_k = 300.15_k;
+    EXPECT_EQ(std::format("{:degc8.1f}", t_k), "    27.0 °C");
+}
+
+TEST(TemperatureFormatting, InvalidTemperatureFormatSpecifierErrorMessage)
+{
+    const auto t = 0.0_degc;
+    const std::string invalid_format = "{:invalid}";
+
+    try
+    {
+        (void)std::vformat(invalid_format, std::make_format_args(t));
+        FAIL() << "Expected std::format_error for invalid temperature format specifier";
+    }
+    catch (const std::format_error &e)
+    {
+        EXPECT_EQ(
+            std::string{e.what()},
+            "invalid format specifier for Temperature. Use 'k', 'degc', 'degf', optionally followed by a number with an 'f' suffix (e.g., 'k8.2f').");
+    }
+    catch (...)
+    {
+        FAIL() << "Expected std::format_error";
+    }
+}

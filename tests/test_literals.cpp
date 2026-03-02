@@ -88,3 +88,41 @@ TEST(LiteralCastTests, CToMps)
     auto mps = static_cast<Speed<SPEED_UNIT::MS, double>>(s);
     EXPECT_NEAR(mps.value, 299792458.0, 1e-4);
 }
+
+TEST(LiteralTests, KelvinLiteral)
+{
+    auto t = 273.15_k;
+    EXPECT_DOUBLE_EQ(t.value, 273.15);
+}
+
+TEST(LiteralTests, CelsiusLiteral)
+{
+    auto t = 100.0_degc;
+    EXPECT_DOUBLE_EQ(t.value, 100.0);
+}
+
+TEST(LiteralTests, FahrenheitLiteral)
+{
+    auto t = 32.0_degf;
+    EXPECT_DOUBLE_EQ(t.value, 32.0);
+}
+
+TEST(Literals, IntegerTemperatureLiteralTypeAndValue)
+{
+    constexpr auto t = 273_k;
+    static_assert(std::is_same_v<decltype(t), const Temperature<TEMPERATURE_UNIT::K, LiteralBaseInt>>);
+    EXPECT_EQ(t.value, 273LL);
+
+    const auto t_c = static_cast<Temperature<TEMPERATURE_UNIT::C, int>>(t);
+    EXPECT_EQ(t_c.value, 0);
+}
+
+TEST(Literals, NegativeTemperatureLiteralCelsiusEqualsFahrenheitAtMinus40)
+{
+    constexpr auto t_c = -40_degc;
+    static_assert(std::is_same_v<decltype(t_c), const Temperature<TEMPERATURE_UNIT::C, LiteralBaseInt>>);
+    EXPECT_EQ(t_c.value, -40LL);
+
+    const auto t_f = static_cast<Temperature<TEMPERATURE_UNIT::F, int>>(t_c);
+    EXPECT_EQ(t_f.value, -40);
+}

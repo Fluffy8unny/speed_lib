@@ -22,11 +22,11 @@ namespace speed_lib
     // Here the actual conversion between units inside of a dimension is defined.
     // these are all defined in relation to a base unit
     // base unit is m/s
-    SPEED_LIB_DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::MS, 1.0L, "ms", "m/s", "Speed")
-    SPEED_LIB_DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::KMH, 1000000.0L / 3600000.0L, "kmh", "km/h", "Speed")
-    SPEED_LIB_DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::MPH, 1609344.0L / 3600000.0L, "mph", "mi/h", "Speed")
-    SPEED_LIB_DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::KNT, 1852000.0L / 3600000.0L, "knt", "knt", "Speed")
-    SPEED_LIB_DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::C, 299792458.0L, "c", "c", "Speed")
+    SPEED_LIB_DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::MS, 1.0L, 0.0L, "ms", "m/s", "Speed")
+    SPEED_LIB_DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::KMH, 1000000.0L / 3600000.0L, 0.0L, "kmh", "km/h", "Speed")
+    SPEED_LIB_DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::MPH, 1609344.0L / 3600000.0L, 0.0L, "mph", "mi/h", "Speed")
+    SPEED_LIB_DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::KNT, 1852000.0L / 3600000.0L, 0.0L, "knt", "knt", "Speed")
+    SPEED_LIB_DEFINE_UNIT_TRAITS(SpeedTag, SPEED_UNIT::C, 299792458.0L, 0.0L, "c", "c", "Speed")
 
     // These are just nice aliases to avoid having to write Quantity<SpeedTag, SPEED_UNIT::MS, double> all the time
     template <SPEED_UNIT Unit, typename ValueType>
@@ -44,7 +44,9 @@ namespace speed_lib
  * @brief Formatter specialization for Speed.
  * @tparam Unit Speed unit (e.g. SPEED_UNIT::KMH).
  * @tparam ValueType Numeric value type (e.g. long double).
- * @example std::format("{}", 10_kmh);
+ * @code
+ * std::format("{}", 10_kmh);
+ * @endcode
  */
 template <speed_lib::SPEED_UNIT Unit, speed_lib::NumericalType ValueType>
 struct std::formatter<speed_lib::Speed<Unit, ValueType>>

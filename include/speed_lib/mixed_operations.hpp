@@ -16,7 +16,9 @@ namespace speed_lib
      * @param[in] speed Speed Quantity.
      * @param[in] time Time Quantity.
      * @return Length in meters.
-     * @example auto d = 10_ms * 5_s;
+     * @code
+     * auto d = 10_ms * 5_s;
+     * @endcode
      */
     template <SPEED_UNIT SpeedUnit, TIME_UNIT TimeUnit, NumericalType ValueType>
     constexpr Length<LENGTH_UNIT::M, ValueType> operator*(const Speed<SpeedUnit, ValueType> &speed, const Time<TimeUnit, ValueType> &time)
@@ -34,7 +36,9 @@ namespace speed_lib
      * @param[in] length Length Quantity.
      * @param[in] time Time Quantity.
      * @return Speed in meters per second.
-     * @example auto v = 100_m / 5_s;
+     * @code
+     * auto v = 100_m / 5_s;
+     * @endcode
      */
     template <LENGTH_UNIT LengthUnit, TIME_UNIT TimeUnit, NumericalType ValueType>
     constexpr Speed<SPEED_UNIT::MS, ValueType> operator/(const Length<LengthUnit, ValueType> &length, const Time<TimeUnit, ValueType> &time)

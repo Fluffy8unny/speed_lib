@@ -195,3 +195,53 @@ TEST(LengthConversion, MilesToFeet)
     auto feet = static_cast<Length<LENGTH_UNIT::FT, long double>>(miles);
     EXPECT_NEAR(feet.value, 5280.0, 1e-9);
 }
+
+TEST(TemperatureConversion, CelsiusToKelvin)
+{
+    Temperature<TEMPERATURE_UNIT::C, long double> c{0.0L};
+    auto k = static_cast<Temperature<TEMPERATURE_UNIT::K, long double>>(c);
+    EXPECT_NEAR(k.value, 273.15L, 1e-12L);
+}
+
+TEST(TemperatureConversion, KelvinToCelsius)
+{
+    Temperature<TEMPERATURE_UNIT::K, long double> k{273.15L};
+    auto c = static_cast<Temperature<TEMPERATURE_UNIT::C, long double>>(k);
+    EXPECT_NEAR(c.value, 0.0L, 1e-12L);
+}
+
+TEST(TemperatureConversion, CelsiusToFahrenheit)
+{
+    Temperature<TEMPERATURE_UNIT::C, long double> c{100.0L};
+    auto f = static_cast<Temperature<TEMPERATURE_UNIT::F, long double>>(c);
+    EXPECT_NEAR(f.value, 212.0L, 1e-12L);
+}
+
+TEST(TemperatureConversion, FahrenheitToCelsius)
+{
+    Temperature<TEMPERATURE_UNIT::F, long double> f{32.0L};
+    auto c = static_cast<Temperature<TEMPERATURE_UNIT::C, long double>>(f);
+    EXPECT_NEAR(c.value, 0.0L, 1e-12L);
+}
+
+TEST(TemperatureConversion, KelvinToFahrenheit)
+{
+    Temperature<TEMPERATURE_UNIT::K, long double> k{255.3722222222222222L};
+    auto f = static_cast<Temperature<TEMPERATURE_UNIT::F, long double>>(k);
+    EXPECT_NEAR(f.value, 0.0L, 1e-12L);
+}
+
+TEST(TemperatureConversion, RoundTrip)
+{
+    Temperature<TEMPERATURE_UNIT::C, double> start{37.5};
+    auto f = static_cast<Temperature<TEMPERATURE_UNIT::F, double>>(start);
+    auto back = static_cast<Temperature<TEMPERATURE_UNIT::C, double>>(f);
+    EXPECT_NEAR(back.value, start.value, 1e-10);
+}
+
+TEST(TemperatureConversion, IntegerCelsiusToKelvin)
+{
+    Temperature<TEMPERATURE_UNIT::C, int> c{0};
+    auto k = static_cast<Temperature<TEMPERATURE_UNIT::K, int>>(c);
+    EXPECT_EQ(k.value, 273);
+}

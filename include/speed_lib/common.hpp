@@ -34,7 +34,12 @@ namespace speed_lib
     {
         // make sure the accuracy of the conversion is at least the max accuracy of the types involved
         using conversion_type = std::common_type_t<LiteralBase, ValueType>;
-        static constexpr conversion_type value{UnitTraits<DimensionTag, UnitFrom>::scale_to_base / UnitTraits<DimensionTag, UnitTo>::scale_to_base};
+        static constexpr conversion_type scale{UnitTraits<DimensionTag, UnitFrom>::scale_to_base / UnitTraits<DimensionTag, UnitTo>::scale_to_base};
+        // Affine conversion with base-space relation b = x * s + o:
+        // y = (x * s_from + o_from - o_to) / s_to
+        //   = x * (s_from / s_to) + (o_from - o_to) / s_to
+        static constexpr conversion_type offset{
+            (UnitTraits<DimensionTag, UnitFrom>::offset_to_base - UnitTraits<DimensionTag, UnitTo>::offset_to_base) / UnitTraits<DimensionTag, UnitTo>::scale_to_base};
     };
 
     /**
@@ -53,25 +58,30 @@ namespace speed_lib
         /**
          * @brief Converts the Quantity to a different unit of the same dimension.
          * @tparam TargetUnit Target unit (e.g. LENGTH_UNIT::KM).
-         * @param[in] TargetUnit the unit to convert to, needs to be in the same dimension as the current unit
+         * @details TargetUnit must be in the same dimension as the current unit.
          * @returns A new Quantity object with the same dimension and value type, but in the target unit
-         * @example auto km = 1500_m.convert<speed_lib::LENGTH_UNIT::KM>();
+         * @code
+         * auto km = 1500_m.convert<speed_lib::LENGTH_UNIT::KM>();
+         * @endcode
          */
         template <UnitForTag_t<DimensionTag> TargetUnit>
         constexpr Quantity<DimensionTag, TargetUnit, ValueType> convert() const
         {
             // make sure the accuracy of the conversion is at least the max accuracy of the types involved.
             using ConversionType = typename ConversionMap<DimensionTag, Unit, TargetUnit, ValueType>::conversion_type;
-            const auto converted_value = static_cast<ConversionType>(value) * ConversionMap<DimensionTag, Unit, TargetUnit, ValueType>::value;
+            const auto converted_value = static_cast<ConversionType>(value) * ConversionMap<DimensionTag, Unit, TargetUnit, ValueType>::scale +
+                                         ConversionMap<DimensionTag, Unit, TargetUnit, ValueType>::offset;
             return Quantity<DimensionTag, TargetUnit, ValueType>{static_cast<ValueType>(converted_value)};
         }
 
         /**
          * @brief Casting from unit of the same dimension to another implicitly
          * @tparam TargetUnit Target unit (e.g. LENGTH_UNIT::KM).
-         * @param[in] TargetUnit the unit to convert to needs to be in the same dimension as the current unit
+         * @details TargetUnit must be in the same dimension as the current unit.
          * @returns A new Quantity object with the same dimension and value type, but in the target unit
-         * @example speed_lib::Length<speed_lib::LENGTH_UNIT::KM, double> km = 1500_m;
+         * @code
+         * speed_lib::Length<speed_lib::LENGTH_UNIT::KM, double> km = 1500_m;
+         * @endcode
          */
         template <UnitForTag_t<DimensionTag> TargetUnit>
         constexpr operator Quantity<DimensionTag, TargetUnit, ValueType>() const
@@ -92,7 +102,9 @@ namespace speed_lib
          * @brief Casting to the same unit, but with another underlying value type.
          * @tparam TargetValueType Target value type (e.g. double).
          * @returns A new Quantity object with the same dimension and unit, but with the target value type.
-         * @example  int x = 1_m; double y=x; y now has the value 1.0, and is of type Quantity<LengthTag, LENGTH_UNIT::M, double>
+         * @code
+         * int x = 1_m; double y = x; // y now has the value 1.0, and is of type Quantity<LengthTag, LENGTH_UNIT::M, double>
+         * @endcode
          */
         template <typename TargetValueType>
             requires std::is_convertible_v<ValueType, TargetValueType>
@@ -106,7 +118,9 @@ namespace speed_lib
          * @tparam TargetUnit Target unit (e.g. LENGTH_UNIT::KM).
          * @tparam TargetValueType Target value type (e.g. double).
          * @returns A new Quantity object with the same dimension, but in the target unit and value type.
-         * @example speed_lib::Length<speed_lib::LENGTH_UNIT::KM, double> km = static_cast<speed_lib::Length<speed_lib::LENGTH_UNIT::KM, double>>(1500_m);
+         * @code
+         * speed_lib::Length<speed_lib::LENGTH_UNIT::KM, double> km = static_cast<speed_lib::Length<speed_lib::LENGTH_UNIT::KM, double>>(1500_m);
+         * @endcode
          */
         template <UnitForTag_t<DimensionTag> TargetUnit, typename TargetValueType>
             requires std::is_convertible_v<ValueType, TargetValueType>
@@ -120,7 +134,9 @@ namespace speed_lib
          * @brief Three-way comparison for Quantities with identical dimension, unit, and value type.
          * @param[in] other Quantity to compare against.
          * @return Comparison category result of the underlying values.
-         * @example auto cmp = 10_m <=> 12_m;
+         * @code
+         * auto cmp = 10_m <=> 12_m;
+         * @endcode
          */
         constexpr auto operator<=>(const Quantity &other) const
         {
@@ -131,7 +147,9 @@ namespace speed_lib
          * @brief Equality comparison for Quantities with identical dimension, unit, and value type.
          * @param[in] other Quantity to compare against.
          * @return true if underlying values are equal, otherwise false.
-         * @example bool eq = 10_m == 10_m;
+         * @code
+         * bool eq = 10_m == 10_m;
+         * @endcode
          */
         constexpr bool operator==(const Quantity &other) const
         {
@@ -151,8 +169,10 @@ namespace speed_lib
             using LeftBaseType = typename ConversionMap<DimensionTag, Unit, Unit, ValueType>::conversion_type;
             using RightBaseType = typename ConversionMap<DimensionTag, OtherUnit, OtherUnit, OtherValueType>::conversion_type;
 
-            const auto lhs_in_base = static_cast<LeftBaseType>(value) * UnitTraits<DimensionTag, Unit>::scale_to_base;
-            const auto rhs_in_base = static_cast<RightBaseType>(other.value) * UnitTraits<DimensionTag, OtherUnit>::scale_to_base;
+            const auto lhs_in_base = static_cast<LeftBaseType>(value) * UnitTraits<DimensionTag, Unit>::scale_to_base +
+                                     UnitTraits<DimensionTag, Unit>::offset_to_base;
+            const auto rhs_in_base = static_cast<RightBaseType>(other.value) * UnitTraits<DimensionTag, OtherUnit>::scale_to_base +
+                                     UnitTraits<DimensionTag, OtherUnit>::offset_to_base;
 
             using CommonType = std::common_type_t<LeftBaseType, RightBaseType>;
             return std::pair<CommonType, CommonType>{
@@ -167,7 +187,9 @@ namespace speed_lib
          * @tparam OtherValueType Value type of the right-hand-side Quantity.
          * @param[in] other Quantity to compare against.
          * @return Comparison category result after unit conversion and common-type promotion.
-         * @example auto cmp = 1_km <=> 900_m;
+         * @code
+         * auto cmp = 1_km <=> 900_m;
+         * @endcode
          */
         template <UnitForTag_t<DimensionTag> OtherUnit, typename OtherValueType>
             requires std::three_way_comparable_with<ValueType, OtherValueType>
@@ -184,7 +206,9 @@ namespace speed_lib
          * @tparam OtherValueType Value type of the right-hand-side Quantity.
          * @param[in] other Quantity to compare against.
          * @return true if values are equal after unit conversion and common-type promotion, otherwise false.
-         * @example bool eq = 1_km == 1000_m;
+         * @code
+         * bool eq = 1_km == 1000_m;
+         * @endcode
          */
         template <UnitForTag_t<DimensionTag> OtherUnit, typename OtherValueType>
             requires std::equality_comparable_with<ValueType, OtherValueType>
@@ -199,7 +223,9 @@ namespace speed_lib
          * @param[in,out] os Output stream.
          * @param[in] q Quantity to stream.
          * @return Reference to the output stream.
-         * @example std::cout << 42_m;
+         * @code
+         * std::cout << 42_m;
+         * @endcode
          */
         friend std::ostream &operator<<(std::ostream &os, const Quantity &q)
         {
@@ -240,7 +266,9 @@ namespace speed_lib
      * @param[in] rhs Right-hand-side Quantity.
      * @param[in] op Binary operation applied to the Quantity values.
      * @return Quantity with the left unit and same value type.
-     * @example auto s = speed_lib::apply_binary_op(10_m, 500_m, std::plus<long double>{});
+     * @code
+     * auto s = speed_lib::apply_binary_op(10_m, 500_m, std::plus<long double>{});
+     * @endcode
      */
     template <typename Op, typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, NumericalType ValueType>
         requires std::is_invocable_r_v<ValueType, Op, ValueType, ValueType>
@@ -260,7 +288,9 @@ namespace speed_lib
      * @param[in] rhs Right-hand-side Quantity, converted to the left unit before applying the operation.
      * @param[in] op Binary operation applied to the Quantity values.
      * @return Quantity with the left unit and same value type.
-     * @example auto s = speed_lib::apply_binary_op(10_m, 500_m, std::plus<long double>{});
+     * @code
+     * auto s = speed_lib::apply_binary_op(10_m, 500_m, std::plus<long double>{});
+     * @endcode
      */
     template <typename Op, typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, UnitForTag_t<DimensionTag> RightUnit, NumericalType ValueType>
         requires std::is_invocable_r_v<ValueType, Op, ValueType, ValueType>
@@ -279,7 +309,9 @@ namespace speed_lib
      * @param[in] a Left-hand-side Quantity.
      * @param[in] b Right-hand-side Quantity.
      * @return Sum in the left-hand-side unit.
-     * @example auto sum = 2_km + 500_m;
+     * @code
+     * auto sum = 2_km + 500_m;
+     * @endcode
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, UnitForTag_t<DimensionTag> RightUnit, NumericalType ValueType>
     constexpr Quantity<DimensionTag, LeftUnit, ValueType> operator+(const Quantity<DimensionTag, LeftUnit, ValueType> &a, const Quantity<DimensionTag, RightUnit, ValueType> &b)
@@ -300,7 +332,9 @@ namespace speed_lib
      * @param[in] a Left-hand-side Quantity.
      * @param[in] b Right-hand-side Quantity.
      * @return Difference in the left-hand-side unit.
-     * @example auto diff = 2_km - 500_m;
+     * @code
+     * auto diff = 2_km - 500_m;
+     * @endcode
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, UnitForTag_t<DimensionTag> RightUnit, NumericalType ValueType>
     constexpr Quantity<DimensionTag, LeftUnit, ValueType> operator-(const Quantity<DimensionTag, LeftUnit, ValueType> &a, const Quantity<DimensionTag, RightUnit, ValueType> &b)
@@ -317,7 +351,9 @@ namespace speed_lib
      * @tparam ValueType Numeric value type (e.g. long double).
      * @param[in] q Quantity to negate.
      * @return Quantity with negated value in the same unit.
-     * @example auto neg = -5_m;
+     * @code
+     * auto neg = -5_m;
+     * @endcode
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, NumericalType ValueType>
     constexpr Quantity<DimensionTag, LeftUnit, ValueType> operator-(const Quantity<DimensionTag, LeftUnit, ValueType> &q)
@@ -337,7 +373,9 @@ namespace speed_lib
      * @param[in] s Quantity operand.
      * @param[in] a Scalar multiplier.
      * @return Quantity in the same unit with common promoted value type.
-     * @example auto scaled = 10_m * 2;
+     * @code
+     * auto scaled = 10_m * 2;
+     * @endcode
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, NumericalType ValueType, NumericalType Scalar>
     constexpr Quantity<DimensionTag, LeftUnit, std::common_type_t<ValueType, Scalar>> operator*(const Quantity<DimensionTag, LeftUnit, ValueType> &s, const Scalar a)
@@ -355,7 +393,9 @@ namespace speed_lib
      * @param[in] a Scalar multiplier.
      * @param[in] s Quantity operand.
      * @return Quantity in the same unit with common promoted value type.
-     * @example auto scaled = 2 * 10_m;
+     * @code
+     * auto scaled = 2 * 10_m;
+     * @endcode
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, NumericalType ValueType, NumericalType Scalar>
     constexpr Quantity<DimensionTag, LeftUnit, std::common_type_t<ValueType, Scalar>> operator*(const Scalar a, const Quantity<DimensionTag, LeftUnit, ValueType> &s)
@@ -375,7 +415,9 @@ namespace speed_lib
      * @param[in] s Quantity operand.
      * @param[in] a Scalar divisor.
      * @return Quantity in the same unit with common promoted value type.
-     * @example auto half = 10_m / 2;
+     * @code
+     * auto half = 10_m / 2;
+     * @endcode
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, NumericalType ValueType, NumericalType Scalar>
     constexpr Quantity<DimensionTag, LeftUnit, std::common_type_t<ValueType, Scalar>> operator/(const Quantity<DimensionTag, LeftUnit, ValueType> &s, const Scalar &a)
@@ -393,7 +435,9 @@ namespace speed_lib
      * @param[in] a Numerator Quantity.
      * @param[in] b Denominator Quantity.
      * @return Unitless ratio.
-     * @example auto ratio = 10_m / 2_m;
+     * @code
+     * auto ratio = 10_m / 2_m;
+     * @endcode
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> Unit, NumericalType LeftValueType, NumericalType RightValueType>
     constexpr std::common_type_t<LeftValueType, RightValueType> operator/(const Quantity<DimensionTag, Unit, LeftValueType> &a, const Quantity<DimensionTag, Unit, RightValueType> &b)
@@ -413,7 +457,9 @@ namespace speed_lib
      * @param[in] a Numerator Quantity.
      * @param[in] b Denominator Quantity.
      * @return Unitless ratio
-     * @example auto ratio = 1_km / 500_m;
+     * @code
+     * auto ratio = 1_km / 500_m;
+     * @endcode
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> LeftUnit, UnitForTag_t<DimensionTag> RightUnit, NumericalType LeftValueType, NumericalType RightValueType>
     constexpr std::common_type_t<LeftValueType, RightValueType> operator/(const Quantity<DimensionTag, LeftUnit, LeftValueType> &a, const Quantity<DimensionTag, RightUnit, RightValueType> &b)

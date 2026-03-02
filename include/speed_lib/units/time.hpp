@@ -20,9 +20,9 @@ namespace speed_lib
     // Here the actual conversion between units inside of a dimension is defined.
     // these are all defined in relation to a base unit
     // base unit is s
-    SPEED_LIB_DEFINE_UNIT_TRAITS(TimeTag, TIME_UNIT::S, 1.0L, "s", "s", "Time")
-    SPEED_LIB_DEFINE_UNIT_TRAITS(TimeTag, TIME_UNIT::MIN, 60.0L, "min", "min", "Time")
-    SPEED_LIB_DEFINE_UNIT_TRAITS(TimeTag, TIME_UNIT::H, 3600.0L, "h", "h", "Time")
+    SPEED_LIB_DEFINE_UNIT_TRAITS(TimeTag, TIME_UNIT::S, 1.0L, 0.0L, "s", "s", "Time")
+    SPEED_LIB_DEFINE_UNIT_TRAITS(TimeTag, TIME_UNIT::MIN, 60.0L, 0.0L, "min", "min", "Time")
+    SPEED_LIB_DEFINE_UNIT_TRAITS(TimeTag, TIME_UNIT::H, 3600.0L, 0.0L, "h", "h", "Time")
 
     // These are just nice aliases to avoid having to write Quantity<TimeTag, TIME_UNIT::S, double> all the time
     template <TIME_UNIT Unit, typename ValueType>
@@ -38,7 +38,9 @@ namespace speed_lib
  * @brief Formatter specialization for Time.
  * @tparam Unit Time unit (e.g. TIME_UNIT::S).
  * @tparam ValueType Numeric value type (e.g. long double).
- * @example std::format("{}", 5_s);
+ * @code
+ * std::format("{}", 5_s);
+ * @endcode
  */
 template <speed_lib::TIME_UNIT Unit, speed_lib::NumericalType ValueType>
 struct std::formatter<speed_lib::Time<Unit, ValueType>>

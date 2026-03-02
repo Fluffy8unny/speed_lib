@@ -111,9 +111,9 @@ namespace speed_lib
 
 	SPEED_LIB_DEFINE_TAG_WITH_UNIT(MassTag, MASS_UNIT)
 
-	SPEED_LIB_DEFINE_UNIT_TRAITS(MassTag, MASS_UNIT::G, 1.0L, "g", "g", "Weight")
-	SPEED_LIB_DEFINE_UNIT_TRAITS(MassTag, MASS_UNIT::KG, 1000.0L, "kg", "kg", "Weight")
-	SPEED_LIB_DEFINE_UNIT_TRAITS(MassTag, MASS_UNIT::LB, 453.59237L, "lb", "lb", "Weight")
+	SPEED_LIB_DEFINE_UNIT_TRAITS(MassTag, MASS_UNIT::G, 1.0L, 0.0L, "g", "g", "Weight")
+	SPEED_LIB_DEFINE_UNIT_TRAITS(MassTag, MASS_UNIT::KG, 1000.0L, 0.0L, "kg", "kg", "Weight")
+	SPEED_LIB_DEFINE_UNIT_TRAITS(MassTag, MASS_UNIT::LB, 453.59237L, 0.0L, "lb", "lb", "Weight")
 
 	template <MASS_UNIT Unit, typename ValueType>
 	using Mass = Quantity<MassTag, Unit, ValueType>;

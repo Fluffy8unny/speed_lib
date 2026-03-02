@@ -133,7 +133,9 @@ namespace speed_lib
      * @tparam DimensionTag Dimension category (e.g. SpeedTag).
      * @tparam FirstUnit First valid unit (e.g. SPEED_UNIT::MS).
      * @tparam RemainingUnits Remaining valid units (e.g. SPEED_UNIT::KMH).
-     * @example auto msg = speed_lib::build_formatter_error_message<speed_lib::SpeedTag, speed_lib::SPEED_UNIT::MS>();
+    * @code
+    * auto msg = speed_lib::build_formatter_error_message<speed_lib::SpeedTag, speed_lib::SPEED_UNIT::MS>();
+    * @endcode
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> FirstUnit, UnitForTag_t<DimensionTag>... RemainingUnits>
     std::string build_formatter_error_message()
@@ -162,7 +164,9 @@ namespace speed_lib
      * @tparam Unit Source unit (e.g. SPEED_UNIT::MS).
      * @tparam ValueType Numeric value type (e.g. long double).
      * @tparam ValidUnits Allowed target units (e.g. SPEED_UNIT::KMH).
-     * @example std::format("{:kmh8.2f}", 10_ms);
+    * @code
+    * std::format("{:kmh8.2f}", 10_ms);
+    * @endcode
      */
     template <typename DimensionTag, UnitForTag_t<DimensionTag> Unit, NumericalType ValueType, UnitForTag_t<DimensionTag>... ValidUnits>
     struct QuantityFormatter : std::formatter<ValueType, char>
@@ -176,7 +180,9 @@ namespace speed_lib
          * @param[in] target_unit Requested target unit.
          * @param[in] quantity Source Quantity.
          * @param[out] formatted_value Converted numeric value in the matched candidate unit.
-         * @example // Used internally by QuantityFormatter during format conversion.
+         * @code
+         * // Used internally by QuantityFormatter during format conversion.
+         * @endcode
          */
         template <UnitForTag_t<DimensionTag> CandidateUnit, UnitForTag_t<DimensionTag>... RemainingUnits>
         static constexpr void convert_if_unit_matches(
@@ -226,7 +232,9 @@ namespace speed_lib
          * @tparam FormatContext Formatting context type (e.g. std::format_context).
          * @param[in] quantity Quantity to format.
          * @param[in,out] ctx Output format context receiving formatted text.
-         * @example std::format("{}", 10_ms);
+         * @code
+         * std::format("{}", 10_ms);
+         * @endcode
          */
         template <typename FormatContext>
         auto format(const Quantity<DimensionTag, Unit, ValueType> &quantity, FormatContext &ctx) const
