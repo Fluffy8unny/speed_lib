@@ -111,6 +111,14 @@ namespace speed_lib
 
 	SPEED_LIB_DEFINE_TAG_WITH_UNIT(MassTag, MASS_UNIT)
 
+	// SPEED_LIB_DEFINE_UNIT_TRAITS parameters (in order):
+	// 1) tag             -> dimension tag type (e.g. MassTag)
+	// 2) unit            -> enum value for this unit (e.g. MASS_UNIT::KG)
+	// 3) scale_to_base   -> multiplicative conversion factor to base unit
+	// 4) offset_to_base  -> additive conversion offset to base unit
+	// 5) parse_suffix    -> suffix accepted in format specifiers (e.g. {:kg})
+	// 6) format_suffix   -> suffix printed in formatted output
+	// 7) dimension_name  -> human-readable name used in diagnostics
 	SPEED_LIB_DEFINE_UNIT_TRAITS(MassTag, MASS_UNIT::G, 1.0L, 0.0L, "g", "g", "Weight")
 	SPEED_LIB_DEFINE_UNIT_TRAITS(MassTag, MASS_UNIT::KG, 1000.0L, 0.0L, "kg", "kg", "Weight")
 	SPEED_LIB_DEFINE_UNIT_TRAITS(MassTag, MASS_UNIT::LB, 453.59237L, 0.0L, "lb", "lb", "Weight")
